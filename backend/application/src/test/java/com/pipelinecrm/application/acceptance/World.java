@@ -1,6 +1,7 @@
 package com.pipelinecrm.application.acceptance;
 
 import com.pipelinecrm.application.testing.UseCases;
+import io.cucumber.java.After;
 import com.pipelinecrm.application.view.DealView;
 import com.pipelinecrm.application.view.ForecastView;
 
@@ -31,9 +32,14 @@ public final class World {
     private final Map<String, UUID> deals = new LinkedHashMap<>();
 
     private RuntimeException failure;
+    private boolean failureWasAsserted;
     private ForecastView forecast;
 
     void rememberPerson(String name, UUID id) {
+        // Two people with the same name would share one derived email address and silently
+        // become one user. F-3.6.
+        assertThat(people).describedAs("the scenario introduced two people called \"%s\"", name)
+                .doesNotContainKey(name);
         people.put(name, id);
     }
 
@@ -69,9 +75,17 @@ public final class World {
         return application.viewDeal.handle(deal(title)).deal();
     }
 
-    /** Runs a step that the scenario expects to be refused, and keeps the refusal for the Then. */
+    /**
+     * Runs a step whose sentence says "tries to", and keeps the refusal for the Then.
+     *
+     * <p>Only steps that describe an attempt may use this. A step that states a plain action
+     * lets its exception out, so a scenario cannot pass because nothing happened. Two
+     * scenarios did exactly that before this rule existed — see docs/reviews/stage-3-review.md,
+     * finding F-3.1 — and {@link #noRefusalWentUnexamined()} makes it impossible to repeat.
+     */
     void attempt(Runnable action) {
         failure = null;
+        failureWasAsserted = false;
         try {
             action.run();
         } catch (RuntimeException refused) {
@@ -80,9 +94,23 @@ public final class World {
     }
 
     void expectRefusal(Class<? extends RuntimeException> expected) {
+        failureWasAsserted = true;
         assertThat(failure)
                 .describedAs("the attempted action should have been refused")
                 .isInstanceOf(expected);
+    }
+
+    /**
+     * Fails a scenario that swallowed a refusal and never looked at it. Such a scenario
+     * passes because the system did nothing, which is not what any of them claim to test.
+     */
+    @After
+    public void noRefusalWentUnexamined() {
+        if (failure != null && !failureWasAsserted) {
+            throw new AssertionError(
+                    "a step was refused and no Then examined the refusal, so this scenario "
+                            + "passed because nothing happened: " + failure);
+        }
     }
 
     void expectRefusal(Class<? extends RuntimeException> expected, String messageFragment) {

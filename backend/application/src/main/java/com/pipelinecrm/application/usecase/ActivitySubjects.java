@@ -9,6 +9,8 @@ import com.pipelinecrm.domain.activity.DealSubject;
 import com.pipelinecrm.domain.identity.ContactId;
 import com.pipelinecrm.domain.identity.DealId;
 
+import java.util.UUID;
+
 /**
  * Turns the port's sealed "what is this activity about" into the domain's sealed version,
  * checking on the way that the thing exists. Both sides are sealed, so this translation is
@@ -31,15 +33,15 @@ public final class ActivitySubjects {
         };
     }
 
-    private ActivitySubject existingDeal(java.util.UUID id) {
+    private ActivitySubject existingDeal(UUID id) {
         DealId dealId = DealId.of(id);
-        Required.found(deals.findById(dealId), "deal", dealId);
+        Required.found(deals.findById(dealId), dealId);
         return new DealSubject(dealId);
     }
 
-    private ActivitySubject existingContact(java.util.UUID id) {
+    private ActivitySubject existingContact(UUID id) {
         ContactId contactId = ContactId.of(id);
-        Required.found(contacts.findById(contactId), "contact", contactId);
+        Required.found(contacts.findById(contactId), contactId);
         return new ContactSubject(contactId);
     }
 }

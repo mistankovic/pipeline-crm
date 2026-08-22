@@ -10,6 +10,7 @@ import com.pipelinecrm.domain.user.User;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,31 +34,38 @@ public final class Parties {
 
     public Company company(UUID id) {
         CompanyId companyId = CompanyId.of(id);
-        return Required.found(companies.findById(companyId), "company", companyId);
+        return Required.found(companies.findById(companyId), companyId);
     }
 
     public User user(UUID id) {
         UserId userId = UserId.of(id);
-        return Required.found(users.findById(userId), "user", userId);
-    }
-
-    public User ownerOf(Deal deal) {
-        UserId owner = deal.parties().owner();
-        return Required.found(users.findById(owner), "user", owner);
+        return Required.found(users.findById(userId), userId);
     }
 
     public Company companyOf(Deal deal) {
         CompanyId company = deal.parties().company();
-        return Required.found(companies.findById(company), "company", company);
+        return Required.found(companies.findById(company), company);
     }
 
-    /** Everyone, indexed. Used to describe a page of deals without a query per deal. */
-    public Map<UserId, User> everyone() {
-        return index(users.findAll(), User::id);
+    public User ownerOf(Deal deal) {
+        UserId owner = deal.parties().owner();
+        return Required.found(users.findById(owner), owner);
     }
 
-    public Map<CompanyId, Company> everyCompany() {
-        return index(companies.findAll(), Company::id);
+    /** Exactly the companies and users these deals refer to, in two queries however many deals there are. */
+    public PartyIndex indexFor(Collection<Deal> deals) {
+        Set<CompanyId> referencedCompanies = deals.stream()
+                .map(deal -> deal.parties().company()).collect(Collectors.toSet());
+        Set<UserId> referencedOwners = deals.stream()
+                .map(deal -> deal.parties().owner()).collect(Collectors.toSet());
+        return new PartyIndex(
+                index(companies.findAllByIds(referencedCompanies), Company::id),
+                usersById(referencedOwners));
+    }
+
+    /** Exactly these users. */
+    public Map<UserId, User> usersById(Collection<UserId> ids) {
+        return index(users.findAllByIds(ids), User::id);
     }
 
     private static <K, V> Map<K, V> index(Collection<V> values, Function<V, K> key) {

@@ -14,7 +14,7 @@ final class Required {
     private Required() {
     }
 
-    static <T> T found(Optional<T> candidate, String kind, Identifier id) {
-        return candidate.orElseThrow(() -> new UnknownEntity(kind, id));
+    static <T> T found(Optional<T> candidate, Identifier id) {
+        return candidate.orElseThrow(() -> new UnknownEntity(id));
     }
 }

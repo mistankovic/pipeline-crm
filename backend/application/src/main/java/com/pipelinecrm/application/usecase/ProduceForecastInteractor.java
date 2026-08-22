@@ -6,7 +6,10 @@ import com.pipelinecrm.application.view.ForecastView;
 import com.pipelinecrm.application.view.ForecastViews;
 import com.pipelinecrm.domain.forecast.Forecast;
 import com.pipelinecrm.domain.forecast.ForecastCalculator;
+import com.pipelinecrm.domain.deal.Deal;
 import com.pipelinecrm.domain.forecast.ForecastDimension;
+
+import java.util.List;
 
 /** The weighted value of the open pipeline. The arithmetic belongs to the domain. */
 public final class ProduceForecastInteractor implements ProduceForecast {
@@ -23,7 +26,8 @@ public final class ProduceForecastInteractor implements ProduceForecast {
 
     @Override
     public ForecastView handle(ForecastDimension dimension) {
-        Forecast forecast = calculator.forecast(deals.findAll(), dimension);
-        return ForecastViews.of(dimension, forecast, parties.everyone());
+        List<Deal> open = deals.findAll();
+        Forecast forecast = calculator.forecast(open, dimension);
+        return ForecastViews.of(dimension, forecast, parties.indexFor(open).users());
     }
 }

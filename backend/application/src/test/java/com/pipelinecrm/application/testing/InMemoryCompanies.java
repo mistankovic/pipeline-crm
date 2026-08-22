@@ -5,9 +5,11 @@ import com.pipelinecrm.domain.company.Company;
 import com.pipelinecrm.domain.identity.CompanyId;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public final class InMemoryCompanies implements CompanyRepository {
@@ -22,6 +24,11 @@ public final class InMemoryCompanies implements CompanyRepository {
     @Override
     public List<Company> findAll() {
         return new ArrayList<>(stored.values());
+    }
+
+    @Override
+    public List<Company> findAllByIds(Collection<CompanyId> ids) {
+        return ids.stream().map(stored::get).filter(Objects::nonNull).toList();
     }
 
     @Override

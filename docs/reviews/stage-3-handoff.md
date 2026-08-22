@@ -89,3 +89,41 @@ All recorded in `docs/mutation-survivors.md`.
 * JPA entities, mappers, Flyway schema — Stage 4.
 * Controllers, DTOs, HTTP error mapping — Stage 5.
 * The Svelte UI — Stage 6.
+
+---
+
+# Stage 3 hand-off — round 2 (response to review)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-3.1 two scenarios pass whatever the system does | **Fixed, and proved fixed.** Three changes: (a) `attempt` is now used only by steps whose sentence says "tries to" — plain actions let their exceptions out; (b) eight sentences in `rejected_input.feature` were reworded to say "tries to", because the *sentence* was wrong, not the step; (c) a Cucumber `@After` hook fails any scenario that swallowed a refusal no Then examined. **Verification:** I sabotaged `ActivitySubjects.existingContact` to throw, and the two scenarios the reviewer named (`recording_activities.feature:21` and `:26`) now fail, along with `:17`. Before the fix they passed. |
+| F-3.2 two views disagree about a missing user | **Fixed.** New `PartyIndex` record whose `companyOf`, `ownerOf` and `user` all go through `Required.found`. `ViewPipelineInteractor` uses it, so the board path and the single-deal path now give the same answer — `UnknownEntity`, not `NullPointerException`. |
+| F-3.3 `Timelines` reads every user per call | **Fixed at the port, as asked.** `UserRepository.findAllByIds` and `CompanyRepository.findAllByIds` added. `Timelines` reads exactly the authors of the activities in hand — an empty timeline reads nobody. `Parties.indexFor(deals)` reads exactly the companies and owners those deals refer to, in two queries whatever the board size. `everyone()` and `everyCompany()` are gone. |
+| F-3.4 deal steps in `ContactSteps`, inline FQNs | **Fixed.** Both deal steps moved to `DealSteps`; `java.util.UUID`, `java.math.BigDecimal` and `CreateDeal` are imported. |
+| F-3.5 `Required.found` stringly typed | **Fixed.** The `kind` argument is gone: `UnknownEntity` derives the word from the identifier's own type, since a `DealId` is not ambiguous. Nine literals removed. `UnknownEntityTest` pins the vocabulary for all five identifier types, because Stage 5's error bodies will read it. |
+| F-3.6 two people with the same name merge silently | **Fixed.** `World.rememberPerson` refuses a duplicate name with a message naming it. |
+| F-3.7 `UseCases` exposes nine public mutable fields | **Refused, with reason.** It is the hand-wired object graph, and its whole value is that a test can reach any port to arrange or inspect. Encapsulating it would mean a getter per field and no additional safety: it is only on the test classpath, and the leverage the reviewer noticed — reaching in to remove a user — is exactly what made the F-3.2 probe possible in one line. I would rather keep the diagnostic power. |
+
+## What the F-3.1 fix actually cost
+
+Nothing was hidden. The suite is still 69 scenarios and still green. What changed is that
+three of them can now fail, and the general defence means the next person cannot reintroduce
+the hole by writing an ordinary-looking step.
+
+The reviewer's underlying point is worth restating: **a passing suite is evidence only about
+the tests that can fail.** 69/69 meant nothing for two of those scenarios, and no coverage
+number, mutation score or CRAP value would ever have revealed it — the code under test was
+executed, just not depended upon.
+
+## Metrics (round 2)
+
+| Metric | `domain` | `application` | Gate |
+|--------|---------:|--------------:|------|
+| Line coverage | 100.0 % | 100.0 % | ≥ 95 % |
+| Branch coverage | 100.0 % | 100.0 % | ≥ 95 % |
+| Mutation score | **125/125 (100 %)** | **86/86 (100 %)** | ≥ 90 % |
+| Worst CRAP | 5.00 | 2.00 | ≤ 6 |
+| CPD @ 30 tokens | 0 | 0 | 0 |
+
+Tests: 138 in `application` (69 unit + 69 acceptance), 231 in `domain`, 23 in `adapter-web`,
+6 in `adapter-persistence`, 17 in `bootstrap`. Full `mvn verify` green across all six modules.

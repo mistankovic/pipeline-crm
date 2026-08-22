@@ -32,6 +32,6 @@ public final class ViewContactTimelineInteractor implements ViewContactTimeline 
 
     private Contact existing(UUID contactId) {
         ContactId id = ContactId.of(contactId);
-        return Required.found(contacts.findById(id), "contact", id);
+        return Required.found(contacts.findById(id), id);
     }
 }

@@ -26,7 +26,7 @@ public final class DealHistory {
 
     public Deal deal(UUID id) {
         DealId dealId = DealId.of(id);
-        return Required.found(deals.findById(dealId), "deal", dealId);
+        return Required.found(deals.findById(dealId), dealId);
     }
 
     public DealActivities of(Deal deal) {

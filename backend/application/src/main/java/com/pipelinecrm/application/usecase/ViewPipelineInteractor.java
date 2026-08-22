@@ -4,19 +4,16 @@ import com.pipelinecrm.application.port.in.ViewPipeline;
 import com.pipelinecrm.application.port.out.DealRepository;
 import com.pipelinecrm.application.view.DealView;
 import com.pipelinecrm.application.view.DealViews;
-import com.pipelinecrm.domain.company.Company;
 import com.pipelinecrm.domain.deal.Deal;
-import com.pipelinecrm.domain.identity.CompanyId;
 import com.pipelinecrm.domain.identity.UserId;
-import com.pipelinecrm.domain.user.User;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
- * The deals on the board. Companies and users are read once and indexed rather than looked
- * up per deal, so a board of fifty deals is three queries and not a hundred and one.
+ * The deals on the board. The companies and owners those deals refer to are read in two
+ * queries, whatever the size of the board, and a missing one is reported as a missing thing
+ * rather than as a null.
  */
 public final class ViewPipelineInteractor implements ViewPipeline {
 
@@ -39,11 +36,9 @@ public final class ViewPipelineInteractor implements ViewPipeline {
     }
 
     private List<DealView> viewsOf(List<Deal> found) {
-        Map<UserId, User> owners = parties.everyone();
-        Map<CompanyId, Company> companies = parties.everyCompany();
+        PartyIndex index = parties.indexFor(found);
         return found.stream()
-                .map(deal -> DealViews.of(deal, companies.get(deal.parties().company()),
-                        owners.get(deal.parties().owner())))
+                .map(deal -> DealViews.of(deal, index.companyOf(deal), index.ownerOf(deal)))
                 .toList();
     }
 }

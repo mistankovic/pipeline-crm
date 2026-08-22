@@ -6,9 +6,11 @@ import com.pipelinecrm.domain.shared.EmailAddress;
 import com.pipelinecrm.domain.user.User;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public final class InMemoryUsers implements UserRepository {
@@ -33,5 +35,10 @@ public final class InMemoryUsers implements UserRepository {
     @Override
     public List<User> findAll() {
         return new ArrayList<>(stored.values());
+    }
+
+    @Override
+    public List<User> findAllByIds(Collection<UserId> ids) {
+        return ids.stream().map(stored::get).filter(Objects::nonNull).toList();
     }
 }

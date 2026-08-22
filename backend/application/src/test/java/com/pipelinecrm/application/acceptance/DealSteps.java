@@ -2,11 +2,13 @@ package com.pipelinecrm.application.acceptance;
 
 import com.pipelinecrm.application.port.in.ChangeDealStage;
 import com.pipelinecrm.application.port.in.CreateDeal;
+import com.pipelinecrm.application.view.DealView;
 import com.pipelinecrm.domain.deal.DealStage;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,9 +41,29 @@ public class DealSteps {
 
     @When("{word} creates a deal {string} for {string} worth {amount}")
     public void createsADeal(String owner, String title, String company, Amount amount) {
-        world.attempt(() -> world.rememberDeal(title, world.application.createDeal.handle(
-                new CreateDeal.NewDeal(title, world.company(company), world.person(owner),
-                        amount.value(), amount.currency(), amount.probability())).id()));
+        world.rememberDeal(title, create(owner, title, world.company(company), amount).id());
+    }
+
+    @When("{word} tries to create a deal {string} for {string} worth {amount}")
+    public void triesToCreateADeal(String owner, String title, String company, Amount amount) {
+        world.attempt(() -> create(owner, title, world.company(company), amount));
+    }
+
+    @When("{word} tries to create a deal {string} for an unknown company worth {amount}")
+    public void triesToCreateADealForAnUnknownCompany(String owner, String title, Amount amount) {
+        world.attempt(() -> create(owner, title, UUID.randomUUID(), amount));
+    }
+
+    @When("{word} tries to create a deal {string} for {string} with an unknown owner")
+    public void triesToCreateADealWithAnUnknownOwner(String actor, String title, String company) {
+        world.attempt(() -> world.application.createDeal.handle(new CreateDeal.NewDeal(
+                title, world.company(company), UUID.randomUUID(),
+                BigDecimal.valueOf(1000), "EUR", 50)));
+    }
+
+    private DealView create(String owner, String title, UUID company, Amount amount) {
+        return world.application.createDeal.handle(new CreateDeal.NewDeal(
+                title, company, world.person(owner), amount.value(), amount.currency(), amount.probability()));
     }
 
     @When("{word} moves {string} to {stage}")

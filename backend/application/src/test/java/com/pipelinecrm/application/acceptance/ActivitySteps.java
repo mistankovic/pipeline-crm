@@ -29,13 +29,13 @@ public class ActivitySteps {
 
     @When("{word} logs a {word} {string} against the deal {string}")
     public void logsAgainstTheDeal(String actor, String type, String summary, String title) {
-        world.attempt(() -> logAgainstDeal(world.deal(title), type, summary, world.person(actor)));
+        logAgainstDeal(world.deal(title), type, summary, world.person(actor));
     }
 
     @When("{word} logs a {word} {string} against the contact {string}")
     public void logsAgainstTheContact(String actor, String type, String summary, String contact) {
-        world.attempt(() -> world.application.logActivity.handle(new LogActivity.NewActivity(
-                new LogActivity.AboutContact(world.contact(contact)), type, summary, world.person(actor))));
+        world.application.logActivity.handle(new LogActivity.NewActivity(
+                new LogActivity.AboutContact(world.contact(contact)), type, summary, world.person(actor)));
     }
 
     @When("{word} tries to log a {word} against an unknown deal")
@@ -43,14 +43,14 @@ public class ActivitySteps {
         world.attempt(() -> logAgainstDeal(UUID.randomUUID(), type, "about nothing", world.person(actor)));
     }
 
-    @When("{word} logs a {word} against an unknown contact")
-    public void logsAgainstAnUnknownContact(String actor, String type) {
+    @When("{word} tries to log a {word} against an unknown contact")
+    public void triesToLogAgainstAnUnknownContact(String actor, String type) {
         world.attempt(() -> world.application.logActivity.handle(new LogActivity.NewActivity(
                 new LogActivity.AboutContact(UUID.randomUUID()), type, "about nothing", world.person(actor))));
     }
 
-    @When("an unknown user logs a {word} against {string}")
-    public void anUnknownUserLogs(String type, String title) {
+    @When("an unknown user tries to log a {word} against {string}")
+    public void anUnknownUserTriesToLog(String type, String title) {
         world.attempt(() -> logAgainstDeal(world.deal(title), type, "by nobody", UUID.randomUUID()));
     }
 
