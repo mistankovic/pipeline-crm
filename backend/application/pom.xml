@@ -16,13 +16,6 @@
   <properties>
     <!-- CONSTITUTION.md section 4: the tightest duplication threshold applies here. -->
     <cpd.minimum.tokens>30</cpd.minimum.tokens>
-    <!--
-      TEMPORARY, Stage 0 only: no production code yet, so no JaCoCo report exists.
-      Stage 3 implements the use cases and MUST delete these two lines.
-    -->
-    <crap.skip>true</crap.skip>
-    <coverage.skip>true</coverage.skip>
-    <pit.skip>true</pit.skip>
   </properties>
 
   <dependencies>
@@ -54,6 +47,11 @@
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-junit-platform-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-picocontainer</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -20,7 +20,11 @@ public record Money(BigDecimal amount, Currency currency) {
     }
 
     public static Money of(String amount, String currencyCode) {
-        return new Money(parseAmount(amount), parseCurrency(currencyCode));
+        return of(parseAmount(amount), currencyCode);
+    }
+
+    public static Money of(BigDecimal amount, String currencyCode) {
+        return new Money(Guard.present(amount, "amount"), parseCurrency(currencyCode));
     }
 
     private static BigDecimal parseAmount(String amount) {

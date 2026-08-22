@@ -62,6 +62,23 @@ class MoneyTest {
     }
 
     @Test
+    void accepts_an_amount_that_is_already_a_number() {
+        assertThat(Money.of(new BigDecimal("12.34"), "EUR")).isEqualTo(Money.of("12.34", "EUR"));
+    }
+
+    @Test
+    void rejects_a_missing_amount_given_as_a_number() {
+        assertThatThrownBy(() -> Money.of((BigDecimal) null, "EUR")).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
+    void rejects_an_unknown_currency_for_an_amount_given_as_a_number() {
+        BigDecimal amount = BigDecimal.ONE;
+
+        assertThatThrownBy(() -> Money.of(amount, "ZZZ")).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
     void treats_zero_as_not_positive() {
         assertThat(Money.zero(EUR).isPositive()).isFalse();
     }
