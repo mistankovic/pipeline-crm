@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.vercel/
+coverage/
+screenshots/
+artifacts/
+*.log
+.DS_Store
+.env
+.env.*
+.pglite/
+*.local
+AGENTS.md
+.grok/
+.node_modules.lock
+AGENTS.md
+.grok/
