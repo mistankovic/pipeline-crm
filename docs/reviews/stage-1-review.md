@@ -147,3 +147,48 @@ that get much more expensive after Stage 3 exists on top of them.
 
 **STAGE 1 NOT APPROVED.** Fix F-1.1 through F-1.5. F-1.6 through F-1.9 may be fixed or
 refused in writing.
+
+---
+
+# Stage 1 — Adversarial Review (round 2)
+
+Re-verified by running, not by reading.
+
+| Finding | Verified |
+|---------|----------|
+| F-1.1 | Yes. All three public mutators on `Deal` — `changeStageTo`, `reprice`, `reweight` — call `requireAuthority` on line 1. I grepped for a fourth mutator; there isn't one. |
+| F-1.2 | Yes. `ReviseDeal` is gone. `Repricing` carries a currency, `Reweighting` an `int`. The scenario that could not be implemented now can be. |
+| F-1.3 | Yes. Re-ran my probe against the rebuilt classes: all three inputs now produce `com.pipelinecrm.domain.shared.InvariantViolation`. The test that asserted `IllegalArgumentException` now asserts the domain type. |
+| F-1.4 | Yes. `ForecastGroup` is sealed over `OwnerGroup(UserId)` / `StageGroup(DealStage)`; nothing stringifies an identity. |
+| F-1.5 | Accepted as a decision. D-13 plus a Constitution non-goal plus a note in the feature file itself is the right shape: a reader of the Gherkin learns where users come from without leaving the file. |
+| F-1.6 | Yes. No `Optional` parameter and no `String` enum survives in `port/in`. |
+| F-1.7 | Yes, and the Builder counted with a script this time and published the per-file table. |
+| F-1.8 | Yes. `rejected_input.feature`, nine scenarios. |
+| F-1.9 | Yes. Explicit `PIPELINE` list. |
+| Metrics | Re-ran `mvn verify`: 100 % line, 100 % branch, **124/124 mutants killed**, worst CRAP 5.00 over 125 methods, Checkstyle and CPD clean, no `-D` overrides. |
+
+## The fix I want to single out
+
+F-1.1 was fixed by asking why the rule existed rather than by adding a check where I
+pointed. D-14 states the reason — value and probability are as much a lever on the forecast
+as stage is — and the scenarios are named after the attack ("Another salesperson cannot
+quietly zero out a rival's deal") rather than after the method. That scenario name will
+still make sense to someone reading it in a year.
+
+## Two things I am carrying forward as debt, not blocking on
+
+1. **The Gherkin does not run.** Sixty-nine scenarios exist and zero execute. That is what
+   the process assigns to Stage 3, and I accept it, but the risk is real: specifications
+   nobody has executed are usually wrong in small ways. The Stage 3 review will treat every
+   scenario that needed *editing* to make it pass as a Stage 1 defect found late, and will
+   say so.
+2. **`application` still carries the Stage 0 gate opt-out.** Unchanged from the tracked
+   debt. Stage 3 discharges it.
+
+## Verdict
+
+The domain is rich, the invariants are enforced by types where types can carry them, the
+exceptions form one hierarchy, and the specifications now cover the boundary as well as the
+rules. The two design faults I blocked on were fixed at the root.
+
+**STAGE 1 APPROVED**
