@@ -1,0 +1,62 @@
+# The whole demo: a database, the API, and the user interface.
+#
+#   docker compose up --build
+#   open http://localhost:8080
+#
+# The browser talks to one origin. nginx serves the built assets and proxies /api to the API
+# container, so there is no CORS configuration anywhere in this project and nothing to widen
+# later. See docs/domain-decisions.md, decision D-19.
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pipelinecrm
+      POSTGRES_USER: pipelinecrm
+      POSTGRES_PASSWORD: pipelinecrm
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      # The API waits for this rather than for a fixed delay, so a slow first start is slow
+      # rather than broken.
+      test: ['CMD-SHELL', 'pg_isready -U pipelinecrm -d pipelinecrm']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: jdbc:postgresql://database:5432/pipelinecrm
+      DATABASE_USER: pipelinecrm
+      DATABASE_PASSWORD: pipelinecrm
+      # Demo grade and deliberately visible: CONSTITUTION.md section 6. The application refuses
+      # to start on a secret shorter than 32 characters, so there is no silent weak default.
+      #
+      # Byte-identical to the one in scripts/run-locally.sh, and that matters: jjwt picks the
+      # HMAC strength from the key's length, so a shorter secret here would quietly sign with
+      # HS256 while the local path signed with HS384. Two documented ways to run the same demo
+      # should not differ in their cryptography.
+      PIPELINECRM_SECURITY_JWT_SECRET: a-development-secret-that-is-long-enough-to-sign
+      SERVER_PORT: 8080
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8080/actuator/health']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build:
+      context: ./frontend
+    ports:
+      - '8080:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  database:

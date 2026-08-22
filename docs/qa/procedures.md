@@ -124,3 +124,15 @@ npm run test:qa                 # needs the backend and a database running
 
 The script starts the frontend itself and reuses a backend that is already up. It leaves an
 HTML report in `frontend/playwright-report/`.
+
+If Playwright cannot find a browser it will say so and every procedure will fail at launch,
+which looks alarming but says nothing about the application. Point it at a browser you already
+have rather than downloading one:
+
+```bash
+PLAYWRIGHT_CHROMIUM_PATH=/path/to/chrome npm run test:qa
+```
+
+This was needed throughout this project's own development, because the pinned browser build
+could not be downloaded here. A launch failure is never a QA result: fix the browser path and
+run again before recording anything.
