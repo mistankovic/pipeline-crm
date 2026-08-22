@@ -10,13 +10,29 @@ import java.util.Currency;
  */
 public record Money(BigDecimal amount, Currency currency) {
 
+    /**
+     * The largest amount this system will hold: 999,999,999,999.9999.
+     *
+     * <p>The limit existed before — as {@code NUMERIC(19,4)} in a migration — so the question
+     * "how much can a deal be worth?" was answered by a column definition, three layers below
+     * anything that could explain it, and the answer arrived as a raw JDBC overflow. The domain
+     * now decides, refuses in its own words, and the schema agrees with it by construction.
+     * See docs/reviews/stage-7-review.md, finding F-7.2.
+     */
+    public static final BigDecimal LARGEST = new BigDecimal("999999999999.99");
+
     public Money {
         Guard.present(amount, "amount");
         Guard.present(currency, "currency");
         if (amount.signum() < 0) {
             throw new InvariantViolation("amount must not be negative, was " + amount.toPlainString());
         }
+        // Rounded first, then checked: an amount that rounds *up* past the limit is over it.
         amount = amount.setScale(currency.getDefaultFractionDigits(), RoundingMode.HALF_UP);
+        if (amount.compareTo(LARGEST) > 0) {
+            throw new InvariantViolation("amount must not exceed " + LARGEST.toPlainString()
+                    + ", was " + amount.toPlainString());
+        }
     }
 
     public static Money of(String amount, String currencyCode) {

@@ -45,7 +45,20 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(new ApiError("InvalidRequest", detail));
     }
 
-    private ResponseEntity<ApiError> unexpected(RuntimeException failure) {
+    /**
+     * The backstop.
+     *
+     * <p>Without it, anything the handlers above do not name escapes to the container, which
+     * re-dispatches to {@code /error} — and that dispatch used to be answered with 401. A
+     * numeric overflow was reported to a signed-in user as "you are not authenticated". Nothing
+     * leaves this class unhandled now. F-7.1.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> anythingElse(Exception failure) {
+        return unexpected(failure);
+    }
+
+    private ResponseEntity<ApiError> unexpected(Exception failure) {
         LOG.error("unhandled failure, answering 500", failure);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError("InternalError", "the request could not be completed"));

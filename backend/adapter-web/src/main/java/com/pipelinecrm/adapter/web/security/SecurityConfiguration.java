@@ -1,5 +1,6 @@
 package com.pipelinecrm.adapter.web.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +36,12 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(routes -> routes
+                        // The container re-dispatches an unhandled failure to /error, and that
+                        // dispatch is anonymous. Authenticating it turned every 500 into a 401 --
+                        // so a data error told the caller "you are not signed in", and the
+                        // browser dutifully signed them out. See docs/reviews/stage-7-review.md,
+                        // finding F-7.1.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(SIGN_IN_ROUTE, PUBLIC_HEALTH).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwt, UsernamePasswordAuthenticationFilter.class)

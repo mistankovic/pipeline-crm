@@ -79,6 +79,36 @@ class MoneyTest {
     }
 
     @Test
+    void accepts_the_largest_amount_the_system_holds() {
+        assertThat(new Money(Money.LARGEST, EUR).amount()).isEqualByComparingTo(Money.LARGEST);
+    }
+
+    @Test
+    void refuses_an_amount_that_only_exceeds_the_limit_once_rounded() {
+        BigDecimal justUnder = new BigDecimal("999999999999.994");
+        BigDecimal roundsOver = new BigDecimal("999999999999.995");
+
+        assertThat(new Money(justUnder, EUR).amount()).isEqualByComparingTo("999999999999.99");
+        assertThatThrownBy(() -> new Money(roundsOver, EUR)).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
+    void refuses_an_amount_larger_than_the_system_can_hold() {
+        BigDecimal tooMuch = Money.LARGEST.add(BigDecimal.ONE);
+
+        assertThatThrownBy(() -> new Money(tooMuch, EUR))
+                .isInstanceOf(InvariantViolation.class)
+                .hasMessageContaining("must not exceed");
+    }
+
+    @Test
+    void refuses_an_absurd_amount_before_a_database_ever_sees_it() {
+        assertThatThrownBy(() -> Money.of("99999999999999999999", "EUR"))
+                .isInstanceOf(InvariantViolation.class)
+                .hasMessageContaining("must not exceed");
+    }
+
+    @Test
     void treats_zero_as_not_positive() {
         assertThat(Money.zero(EUR).isPositive()).isFalse();
     }

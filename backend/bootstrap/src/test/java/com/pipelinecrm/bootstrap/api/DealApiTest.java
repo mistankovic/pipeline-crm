@@ -212,6 +212,30 @@ class DealApiTest extends ApiTest {
     }
 
     @Test
+    void an_absurd_value_is_400_from_the_domain_not_an_overflow_from_the_database() throws Exception {
+        http.perform(as(post("/api/deals"), sam())
+                        .content("""
+                                {"title": "Absurd", "companyId": "%s", "value": 99999999999999999999,
+                                 "currency": "EUR", "probability": 50}""".formatted(acme)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("InvariantViolation"))
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("must not exceed")));
+    }
+
+    @Test
+    void a_company_name_that_looks_like_sql_is_stored_as_text_and_breaks_nothing() throws Exception {
+        http.perform(as(post("/api/companies"), sam())
+                        .content("""
+                                {"name": "Bobby'); DROP TABLE deals;--"}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Bobby'); DROP TABLE deals;--"));
+
+        // The table is still there, which is the actual assertion.
+        http.perform(as(get("/api/deals"), sam())).andExpect(status().isOk());
+    }
+
+    @Test
     void an_unknown_currency_is_400() throws Exception {
         http.perform(as(post("/api/deals"), sam())
                         .content("""

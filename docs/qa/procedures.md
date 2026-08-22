@@ -95,6 +95,18 @@ This needs **two browsers** (or one browser and one private window), signed in a
 | 6.5 | Note the Lead total. Create a Lead deal worth 777000 at 100%. Note the total again. Mark that deal Closed Lost. Note it a third time. | The total rises by exactly 777,000, then returns to exactly what it was. Won and lost deals are history and do not appear in a forecast. |
 | 6.6 | Create a deal in **USD**. Open the forecast. | A separate line in dollars. Currencies are never added together. |
 
+## QA-7 — When things go wrong
+
+Added after hostile QA found a request a signed-in user could make and **be logged out by**.
+The other six sections walk the happy paths and the business refusals; this one asks what the
+application does when something actually breaks.
+
+| # | Do this | You must see |
+|---|---------|--------------|
+| 7.1 | Create a deal with a value of `99999999999999999999`. | A red banner containing **"must not exceed"**, and you are **still signed in**. A data error must never end your session. |
+| 7.2 | Create a company called `Bobby'); DROP TABLE deals;--`. | It appears in the list with that exact name, and the board still shows six columns. The name is data, not a command. |
+| 7.3 | Create a company whose name contains `<img src=x onerror="...">`. | The name is displayed as text. Nothing executes. |
+
 ---
 
 ## Recording a run

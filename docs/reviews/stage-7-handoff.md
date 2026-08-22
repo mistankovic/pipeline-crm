@@ -100,3 +100,39 @@ Tests: `domain` 254 · `application` 151 (79 unit + **72 Gherkin scenarios**) ·
 * Docker compose, the final README and the packaging — Stage 8.
 * The QA procedures cover the flows the requirement names. They are not exhaustive; they are the
   set a reviewer can run in half an hour and believe.
+
+---
+
+# Stage 7 hand-off — round 2 (response to review)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-7.1 every server error reported as **401** | **Fixed, both ends.** `SecurityConfiguration` permits the `ERROR` dispatcher type, so the container's re-dispatch to `/error` is no longer treated as an anonymous request. And `ApiExceptionHandler` gained a catch-all, so nothing reaches the container to begin with. Verified against the running app: `GET /error` with a token is now **500**, an anonymous `GET /api/deals` is still **401**. Three tests in `ServerFaultApiTest` — via a controller that exists only to fail, because provoking a genuine one means finding a bug and the point is that there is not one to find. |
+| F-7.2 the database decided how much a deal could be worth | **Fixed in the domain.** `Money.LARGEST` is 999,999,999,999.99, checked **after** rounding so an amount that rounds *up* past the limit is over it. Verified live: the request that produced `SQLState 22003 numeric field overflow` now returns `400 {"error":"InvariantViolation","message":"amount must not exceed 999999999999.99, was 99999999999999999999.00"}`. Four new domain tests including the rounding boundary. |
+| F-7.3 no procedure covered a server error | **Fixed.** New section **QA-7 — When things go wrong**, three procedures. 7.1 is the one that matters: an absurd value must produce a message **and leave you signed in**. |
+| F-7.4 injection was checked but not recorded | **Fixed.** QA-7.2 stores `Bobby'); DROP TABLE deals;--` and then asserts the board still works — the table still existing is the actual assertion. QA-7.3 does the same for markup, checking that nothing executed. An API test pins both server-side. |
+| F-7.5 procedures reference a compose file that does not exist | **Deferred to Stage 8**, as the review allows. The compose file lands there and the precondition becomes true. |
+
+## The interaction worth remembering
+
+F-7.1 is the only defect in this project produced by two *correct* decisions meeting:
+
+* Stage 6 made the browser sign out on any 401 — right, and I would do it again.
+* Stage 2 authenticated every request that was not explicitly public — right, and the error
+  dispatch was never thought about.
+
+Together they meant a numeric overflow logged the user out. Neither code review nor any gate
+would have found it, because neither piece is wrong. Only sending a hostile request to a
+running system did.
+
+## Final metrics (round 2)
+
+| Metric | `domain` | `application` | Gate |
+|--------|---------:|--------------:|------|
+| Line / branch coverage | **100 % / 100 %** | **100 % / 100 %** | ≥ 95 % |
+| Mutation score | **124/124** | **88/88** | ≥ 90 % |
+| Worst CRAP | **4.00** | **2.00** | ≤ 6, target 4 |
+| Methods | 129 | 127 | — |
+| CPD @ 30 tokens · Checkstyle | 0 · 0 | 0 · 0 | 0 |
+
+**34 of 34 QA procedures pass**, recorded in `docs/qa/runs/2026-08-22.md`.
