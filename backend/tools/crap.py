@@ -20,6 +20,7 @@ from pathlib import Path
 EXIT_OK = 0
 EXIT_VIOLATION = 1
 EXIT_NO_REPORT = 2
+EXIT_UNUSABLE_REPORT = 3
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,11 @@ class MethodMetric:
     complexity: int
     covered_lines: int
     total_lines: int
+
+    @property
+    def is_measurable(self) -> bool:
+        """A method JaCoCo gave a complexity but no lines for cannot be scored honestly."""
+        return self.total_lines > 0
 
     @property
     def coverage(self) -> float:
@@ -104,7 +110,26 @@ def parse_arguments(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("jacoco_xml", type=Path)
     parser.add_argument("--threshold", type=float, default=6.0)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help="Accept a report containing no methods. Only for a module that genuinely has no code yet.",
+    )
     return parser.parse_args(argv)
+
+
+def _reject_unusable(module: str, metrics: list[MethodMetric], allow_empty: bool) -> str | None:
+    """A gate that cannot measure anything must fail, not congratulate itself."""
+    if not metrics and not allow_empty:
+        return (
+            f"the JaCoCo report for {module} contains no methods. "
+            "That means the tests did not run, not that the code is clean. "
+            "Pass --allow-empty if the module is genuinely empty."
+        )
+    unmeasurable = [metric.display_name for metric in metrics if not metric.is_measurable]
+    if unmeasurable:
+        return f"{len(unmeasurable)} method(s) in {module} have no line counter: " + ", ".join(unmeasurable[:5])
+    return None
 
 
 def main(argv: list[str]) -> int:
@@ -116,6 +141,11 @@ def main(argv: list[str]) -> int:
     module, metrics = read_report(arguments.jacoco_xml)
     arguments.report.parent.mkdir(parents=True, exist_ok=True)
     arguments.report.write_text(render_report(metrics, arguments.threshold, module), encoding="utf-8")
+
+    unusable = _reject_unusable(module, metrics, arguments.allow_empty)
+    if unusable:
+        print(f"CRAP gate UNUSABLE: {unusable}", file=sys.stderr)
+        return EXIT_UNUSABLE_REPORT
 
     violations = [metric for metric in metrics if metric.crap > arguments.threshold]
     if violations:

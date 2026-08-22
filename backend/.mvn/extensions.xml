@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file exists so that Maven can find the reactor root from any working directory.
+  Maven walks up from the current directory looking for a `.mvn` folder and sets
+  ${maven.multiModuleProjectDirectory} to its parent. Without it that property silently
+  becomes the current directory, and every path-based quality gate breaks when the build
+  is run from inside a module. See docs/reviews/stage-0-review.md, finding F-0.1.
+  No extensions are declared on purpose.
+-->
+<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0"/>

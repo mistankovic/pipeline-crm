@@ -13,6 +13,18 @@
   <name>PipelineCRM :: adapter-web</name>
   <description>Interface adapters for HTTP. Controllers translate HTTP to use-case ports and back.</description>
 
+  <properties>
+    <!--
+      Opt-out, with reason. CONSTITUTION.md section 3 scopes the 95% coverage and CRAP
+      gates to domain and application, which is where the business rules live. This
+      module is an adapter: it is held to account by integration tests against a real
+      HTTP surface and by the architecture fitness functions, not by a line-coverage number.
+      Checkstyle, CPD and the architecture rules still apply in full.
+    -->
+    <coverage.skip>true</coverage.skip>
+    <crap.skip>true</crap.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.pipelinecrm</groupId>

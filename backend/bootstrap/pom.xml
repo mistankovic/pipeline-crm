@@ -13,6 +13,16 @@
   <name>PipelineCRM :: bootstrap</name>
   <description>Frameworks and drivers. Spring Boot application, wiring, migrations, architecture tests.</description>
 
+  <properties>
+    <!--
+      Opt-out, with reason: the composition root is wiring, not logic. Its correctness is
+      demonstrated by the architecture fitness functions and the full-stack tests that
+      live here, not by a coverage percentage over Spring configuration.
+    -->
+    <coverage.skip>true</coverage.skip>
+    <crap.skip>true</crap.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.pipelinecrm</groupId>

@@ -27,15 +27,27 @@ def _write_report(directory, **counters):
     return path
 
 
-def _run(report_path, threshold="6"):
+def _run(report_path, threshold="6", extra=()):
     report_out = report_path.with_name("crap-report.md")
-    completed = subprocess.run(
-        [sys.executable, str(SCRIPT), str(report_path), "--threshold", threshold, "--report", str(report_out)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    command = [sys.executable, str(SCRIPT), str(report_path), "--threshold", threshold, "--report", str(report_out)]
+    command.extend(extra)
+    completed = subprocess.run(command, capture_output=True, text=True, check=False)
     return completed, report_out
+
+
+EMPTY_REPORT = '<?xml version="1.0" encoding="UTF-8"?><report name="module"></report>'
+
+NO_LINE_COUNTER_REPORT = """<?xml version="1.0" encoding="UTF-8"?>
+<report name="module">
+  <package name="com/pipelinecrm/domain">
+    <class name="com/pipelinecrm/domain/Sample" sourcefilename="Sample.java">
+      <method name="unmeasurable" desc="()V" line="10">
+        <counter type="COMPLEXITY" missed="4" covered="0"/>
+      </method>
+    </class>
+  </package>
+</report>
+"""
 
 
 class CrapGateTest(unittest.TestCase):
@@ -84,6 +96,35 @@ class CrapGateTest(unittest.TestCase):
             _, report_out = _run(report)
 
             self.assertIn("com.pipelinecrm.domain.Sample.listed", report_out.read_text(encoding="utf-8"))
+
+    def test_fails_when_the_report_contains_no_methods_at_all(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "jacoco.xml"
+            report.write_text(EMPTY_REPORT, encoding="utf-8")
+
+            completed, _ = _run(report)
+
+            self.assertEqual(3, completed.returncode)
+            self.assertIn("did not run", completed.stderr)
+
+    def test_accepts_an_empty_report_only_when_explicitly_allowed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "jacoco.xml"
+            report.write_text(EMPTY_REPORT, encoding="utf-8")
+
+            completed, _ = _run(report, extra=["--allow-empty"])
+
+            self.assertEqual(0, completed.returncode, completed.stderr)
+
+    def test_fails_when_a_method_has_complexity_but_no_line_counter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "jacoco.xml"
+            report.write_text(NO_LINE_COUNTER_REPORT, encoding="utf-8")
+
+            completed, _ = _run(report)
+
+            self.assertEqual(3, completed.returncode)
+            self.assertIn("unmeasurable", completed.stderr)
 
     def test_reports_a_missing_jacoco_report_as_a_distinct_failure(self):
         with tempfile.TemporaryDirectory() as directory:

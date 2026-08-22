@@ -8,13 +8,14 @@
     "build": "svelte-check --tsconfig ./tsconfig.json && vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run --passWithNoTests",
     "test:qa": "playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@tsconfig/svelte": "^5.0.4",
+    "@types/node": "^26.2.0",
     "jsdom": "^26.0.0",
     "svelte": "^5.19.0",
     "svelte-check": "^4.1.4",

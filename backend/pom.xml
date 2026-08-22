@@ -47,11 +47,21 @@
     <!-- Quality gates. Overridden per module only where the constitution allows. -->
     <coverage.line.minimum>0.95</coverage.line.minimum>
     <coverage.branch.minimum>0.95</coverage.branch.minimum>
+    <coverage.class.line.minimum>0.90</coverage.class.line.minimum>
+    <coverage.class.branch.minimum>0.85</coverage.class.branch.minimum>
     <crap.threshold>6</crap.threshold>
     <pit.threshold>90</pit.threshold>
     <pit.skip>false</pit.skip>
-    <crap.skip>true</crap.skip>
-    <coverage.skip>true</coverage.skip>
+    <!--
+      Gates are opt-OUT, not opt-in: a module added tomorrow inherits every check.
+      A module that opts out must say so in its own POM, with a reason.
+      See docs/reviews/stage-0-review.md, finding F-0.3.
+    -->
+    <crap.skip>false</crap.skip>
+    <coverage.skip>false</coverage.skip>
+    <crap.allow.empty>--allow-empty</crap.allow.empty>
+    <cpd.minimum.tokens>100</cpd.minimum.tokens>
+    <cpd.skip>false</cpd.skip>
     <crap.script>${maven.multiModuleProjectDirectory}/tools/crap.py</crap.script>
     <checkstyle.config>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</checkstyle.config>
     <checkstyle.suppressions>${maven.multiModuleProjectDirectory}/config/checkstyle/suppressions.xml</checkstyle.suppressions>
@@ -145,6 +155,25 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <profiles>
+    <!--
+      The reactor root is a POM-packaging aggregator with no sources. JaCoCo and PMD skip
+      such projects themselves; the CRAP gate is an exec call that does not, so it is
+      switched off here rather than by weakening the inherited default. Activation keys
+      off a file that only the aggregator has.
+    -->
+    <profile>
+      <id>aggregator-has-no-code</id>
+      <activation>
+        <file><exists>${basedir}/domain/pom.xml</exists></file>
+      </activation>
+      <properties>
+        <crap.skip>true</crap.skip>
+        <coverage.skip>true</coverage.skip>
+      </properties>
+    </profile>
+  </profiles>
 
   <build>
     <pluginManagement>
@@ -264,6 +293,25 @@
                     </limit>
                   </limits>
                 </rule>
+                <!--
+                  A bundle average lets one wholly untested class hide behind well tested
+                  ones. This floor makes that impossible. F-0.6.
+                -->
+                <rule>
+                  <element>CLASS</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>${coverage.class.line.minimum}</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>${coverage.class.branch.minimum}</minimum>
+                    </limit>
+                  </limits>
+                </rule>
               </rules>
             </configuration>
           </execution>
@@ -289,8 +337,33 @@
                 <argument>${crap.threshold}</argument>
                 <argument>--report</argument>
                 <argument>${project.build.directory}/crap-report.md</argument>
+                <argument>${crap.allow.empty}</argument>
               </arguments>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!--
+        F-0.4: CONSTITUTION.md section 4 forbids duplicated blocks. This is that rule.
+        The token threshold is tightened to 30 in domain and application.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${pmd.plugin.version}</version>
+        <configuration>
+          <skip>${cpd.skip}</skip>
+          <minimumTokens>${cpd.minimum.tokens}</minimumTokens>
+          <failOnViolation>true</failOnViolation>
+          <printFailingErrors>true</printFailingErrors>
+          <includeTests>false</includeTests>
+        </configuration>
+        <executions>
+          <execution>
+            <id>cpd-duplication-check</id>
+            <phase>verify</phase>
+            <goals><goal>cpd-check</goal></goals>
           </execution>
         </executions>
       </plugin>
@@ -309,7 +382,7 @@
         <configuration>
           <configLocation>${checkstyle.config}</configLocation>
           <suppressionsLocation>${checkstyle.suppressions}</suppressionsLocation>
-          <includeTestSourceDirectory>false</includeTestSourceDirectory>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <violationSeverity>warning</violationSeverity>

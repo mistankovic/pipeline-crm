@@ -14,4 +14,18 @@
     it is the composition root. Scoped to that single file.
   -->
   <suppress checks="HideUtilityClassConstructor" files="PipelineCrmApplication\.java$"/>
+  <!--
+    F-0.7: test sources are now checked. Structural rules (complexity, nesting, method
+    length, star imports, braces) apply to tests exactly as to production code, because
+    tests are the larger half of this codebase. Four checks are lifted for tests only:
+
+      MagicNumber      - a test's whole point is concrete example values.
+      VisibilityModifier - JUnit fixtures are conventionally package-visible fields.
+      HideUtilityClassConstructor - test data builders and Cucumber glue holders.
+      AbbreviationAsWordInName - test names spell out domain acronyms deliberately.
+  -->
+  <suppress checks="MagicNumber" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress checks="VisibilityModifier" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress checks="HideUtilityClassConstructor" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress checks="AbbreviationAsWordInName" files="[\\/]src[\\/]test[\\/]"/>
 </suppressions>

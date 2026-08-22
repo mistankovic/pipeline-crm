@@ -1,0 +1,53 @@
+name: quality-gates
+
+# Every gate in CONSTITUTION.md section 3, run on every push and pull request.
+# A gate that only runs when a developer remembers to run it is not a gate (F-0.9).
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend — architecture, coverage, mutation, CRAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+      - name: Test the CRAP gate itself
+        run: python3 -m unittest discover -s backend/tools -p 'test_*.py'
+      - name: Full verify
+        run: mvn -B -f backend/pom.xml verify
+      - name: Publish reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-quality-reports
+          path: |
+            backend/*/target/site/jacoco/
+            backend/*/target/pit-reports/
+            backend/*/target/crap-report.md
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend — types and unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:unit
+      - run: npm run build

@@ -14,8 +14,16 @@
   <description>Enterprise business rules. Depends on the JDK and nothing else.</description>
 
   <properties>
-    <coverage.skip>false</coverage.skip>
-    <crap.skip>false</crap.skip>
+    <!-- CONSTITUTION.md section 4: the tightest duplication threshold applies here. -->
+    <cpd.minimum.tokens>30</cpd.minimum.tokens>
+    <!--
+      TEMPORARY, Stage 0 only: this module has no production code yet, so there is no
+      JaCoCo report for the CRAP gate to read. Stage 1 adds the domain and MUST delete
+      these two lines. The Stage 1 review checks for them.
+    -->
+    <crap.skip>true</crap.skip>
+    <coverage.skip>true</coverage.skip>
+    <pit.skip>true</pit.skip>
   </properties>
 
   <dependencies>

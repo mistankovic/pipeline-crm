@@ -14,8 +14,15 @@
   <description>Use-case interactors and ports. Depends on domain only.</description>
 
   <properties>
-    <coverage.skip>false</coverage.skip>
-    <crap.skip>false</crap.skip>
+    <!-- CONSTITUTION.md section 4: the tightest duplication threshold applies here. -->
+    <cpd.minimum.tokens>30</cpd.minimum.tokens>
+    <!--
+      TEMPORARY, Stage 0 only: no production code yet, so no JaCoCo report exists.
+      Stage 3 implements the use cases and MUST delete these two lines.
+    -->
+    <crap.skip>true</crap.skip>
+    <coverage.skip>true</coverage.skip>
+    <pit.skip>true</pit.skip>
   </properties>
 
   <dependencies>

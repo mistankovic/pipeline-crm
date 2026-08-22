@@ -65,3 +65,41 @@ no production code yet; both gates are unskipped by default in those two modules
 2. `coverage.skip`/`crap.skip` default to `true` in the parent and are switched off per
    module. A new module would silently inherit *no* coverage gate.
 3. The Constitution promises a CPD duplication gate that Stage 0 does not wire.
+
+---
+
+# Stage 0 hand-off — round 2 (response to review)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-0.1 build only works from one directory | **Fixed.** Added `backend/.mvn/extensions.xml` as a reactor-root marker. Re-verified: `cd backend/domain && mvn validate` now passes and `maven.multiModuleProjectDirectory` resolves to `backend/`. |
+| F-0.2 CRAP gate passes on an empty report | **Fixed.** `crap.py` exits 3 (`EXIT_UNUSABLE_REPORT`) when the report contains no methods, or when any method has a complexity counter but no line counter. An empty report is accepted only behind an explicit `--allow-empty`. Three new tests cover all three paths; 8 tests total, green. |
+| F-0.3 gates opt-in by default | **Fixed.** `coverage.skip` and `crap.skip` now default to `false` in the parent. Every module that opts out states its reason in its own POM. A new module inherits every gate. |
+| F-0.4 promised CPD gate missing | **Fixed.** `maven-pmd-plugin:cpd-check` bound to `verify` for all modules, failing the build. 30 tokens in `domain`/`application`, 100 elsewhere; the Constitution now states both numbers. Confirmed running (`domain/target/cpd.xml`). |
+| F-0.5 Constitution vs `.gitignore` | **Fixed.** §5.2 no longer asks for committed reports; the numbers go in the hand-off, the artefacts stay out of git. |
+| F-0.6 bundle-only coverage rule | **Fixed.** Added a `CLASS`-element rule at 0.90 line / 0.85 branch beneath the 0.95 bundle rule. No single class can be dark. |
+| F-0.7 test sources unchecked | **Fixed.** `includeTestSourceDirectory=true`. Complexity, nesting, method length, star imports and braces now apply to tests. Four checks lifted for tests only, each with a written reason in `suppressions.xml`. §3.2 now separates the mechanical rules from the review-only ones. |
+| F-0.8 `docs/mutation-survivors.md` legislated but unenforced | **Fixed by amendment.** §3 now says plainly that the file is a review-gate obligation and that no tool reads it. |
+| F-0.9 no CI | **Fixed.** `.github/workflows/quality-gates.yml` runs the CRAP gate's own tests, the full `mvn verify`, and the frontend type-check/tests/build on every push and PR, and uploads the reports. |
+| F-0.10 `.gitignore` would swallow a Maven wrapper | **Fixed.** Negation added ahead of the change that would need it. |
+| F-0.11 `vite.config.ts` unchecked | **Fixed.** Added to `tsconfig` `include`, plus `/// <reference types="vitest/config" />` and `@types/node`. `svelte-check` now covers 284 files, 0 errors. |
+
+## The one thing I did not remove
+
+`domain`, `application` set `crap.skip`, `coverage.skip` and `pit.skip` to `true`, with a
+comment saying which stage must delete them. Reason: those modules contain no production
+code yet, and after the F-0.2 fix the gates now *correctly* fail loudly rather than
+passing silently on nothing — PIT likewise aborts with "No mutations found". Rather than
+weaken a gate to accommodate an empty module, the module declares itself not-yet-measured
+in a way that is impossible to miss on review. Stage 1 (domain) and Stage 3 (application)
+delete those lines; the corresponding reviews must check that they are gone.
+
+## Verification run (round 2)
+
+```
+mvn -f backend/pom.xml verify                                → BUILD SUCCESS, 6 modules, no -D flags
+cd backend/domain && mvn validate                            → SUCCESS (was broken before)
+python3 -m unittest discover -s backend/tools -p 'test_*.py' → 8 tests, OK
+cd frontend && npm run check                                 → 284 files, 0 errors
+cd frontend && npm run test:unit && npm run build            → OK
+```

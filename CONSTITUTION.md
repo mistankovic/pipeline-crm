@@ -95,7 +95,7 @@ A stage is not done until **all** of the following are green.
 | Architecture | ArchUnit | all modules | build fails on any violation |
 | Integration | Testcontainers (PostgreSQL) | `adapter-persistence`, `bootstrap` | real Postgres, no H2 substitution |
 | API | Spring `MockMvc` / `@SpringBootTest` | `adapter-web`, `bootstrap` | every endpoint, incl. 401/403/404/409/422 paths |
-| Mutation | PIT | `domain`, `application` | mutation score ≥ 90 %, **and** every surviving mutant individually justified in `docs/mutation-survivors.md` |
+| Mutation | PIT | `domain`, `application` | mutation score ≥ 90 %, enforced by the build. Every surviving mutant is additionally justified in `docs/mutation-survivors.md` — **review gate**, no tool reads that file |
 | CRAP | `tools/crap.py` over JaCoCo XML | `domain`, `application` | **every** method CRAP ≤ 6; build fails otherwise |
 | UI / QA | Playwright + written manual procedure | full stack | every procedure in `docs/qa/` executed and recorded |
 
@@ -110,6 +110,10 @@ and `cov` is the fraction of the method's lines covered by tests.
   satisfy at any coverage, so it must be refactored. This is intentional.
 
 ### 3.2 Test style
+
+Structural limits (complexity, nesting, method length, star imports) are enforced on test
+sources by Checkstyle exactly as on production code. The judgement-based rules below are
+**review gate** obligations:
 
 * One reason to fail per test. Test names read as sentences describing behaviour.
 * Arrange–Act–Assert, visually separated.
@@ -129,7 +133,7 @@ and `cov` is the fraction of the method's lines covered by tests.
 | Nesting depth | ≤ 2 | Checkstyle |
 | Public class per file | 1 | Checkstyle |
 | `import *` | forbidden | Checkstyle |
-| Duplicated blocks | 0 above 30 tokens in `domain`/`application` | PMD CPD, build fails |
+| Duplicated blocks | 0 above 30 tokens in `domain`/`application`; 0 above 100 tokens elsewhere | PMD CPD (`cpd-check`), build fails |
 | Mutable public state | forbidden — domain fields are `private final`; value objects are `record`s | review gate + ArchUnit `GeneralCodingRules` |
 | `null` returned from a domain/application method | forbidden — use `Optional` or throw | review gate |
 | Comments | a comment explaining *what* the code does is a defect; extract a named method instead | review gate |
@@ -139,7 +143,8 @@ and `cov` is the fraction of the method's lines covered by tests.
 ## 5. Definition of Done for a stage
 
 1. Code compiles; `mvn -f backend/pom.xml verify` is green from a clean state.
-2. All gates in §3 that apply to the stage pass, with the report committed under `reports/`.
+2. All gates in §3 that apply to the stage pass. Generated reports are build output and
+   are **not** committed; the resulting numbers are recorded in the stage hand-off.
 3. The Builder writes a hand-off note in `docs/reviews/stage-N-handoff.md` listing what
    was built, what was deliberately deferred, and the metric numbers.
 4. The Adversarial Reviewer writes `docs/reviews/stage-N-review.md` with numbered
