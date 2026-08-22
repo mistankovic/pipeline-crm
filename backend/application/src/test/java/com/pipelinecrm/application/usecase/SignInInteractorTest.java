@@ -85,6 +85,39 @@ class SignInInteractorTest {
     }
 
     @Test
+    void an_unknown_address_still_costs_a_password_check_so_that_it_cannot_be_timed() {
+        int before = application.passwords.comparisons();
+
+        assertThatThrownBy(() -> signIn("nobody@example.com", RIGHT_PASSWORD))
+                .isInstanceOf(AuthenticationFailed.class);
+
+        assertThat(application.passwords.comparisons())
+                .describedAs("an unknown address must do the same work as a known one, "
+                        + "or the difference is measurable with a stopwatch")
+                .isEqualTo(before + 1);
+    }
+
+    @Test
+    void a_malformed_address_costs_the_same_check_as_well() {
+        int before = application.passwords.comparisons();
+
+        assertThatThrownBy(() -> signIn("not-an-address", RIGHT_PASSWORD))
+                .isInstanceOf(AuthenticationFailed.class);
+
+        assertThat(application.passwords.comparisons()).isEqualTo(before + 1);
+    }
+
+    @Test
+    void a_wrong_password_costs_exactly_one_check_too() {
+        int before = application.passwords.comparisons();
+
+        assertThatThrownBy(() -> signIn("sam@example.com", "guess"))
+                .isInstanceOf(AuthenticationFailed.class);
+
+        assertThat(application.passwords.comparisons()).isEqualTo(before + 1);
+    }
+
+    @Test
     void never_reaches_the_token_issuer_for_a_failed_sign_in() {
         assertThatThrownBy(() -> signIn("sam@example.com", "guess")).isInstanceOf(AuthenticationFailed.class);
         assertThatThrownBy(() -> signIn("nobody@example.com", "x")).isInstanceOf(AuthenticationFailed.class);

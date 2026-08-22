@@ -168,9 +168,11 @@ class RepositoryRoundTripTest extends PostgresBackedTest {
 
     @Test
     void a_deal_owned_by_somebody_else_is_not() {
-        aDealAt(DealStage.LEAD, aCompany());
+        Deal samsDeal = aDealAt(DealStage.LEAD, aCompany());
 
-        assertThat(deals.findOwnedBy(MO)).extracting(Deal::id).isEmpty();
+        // Asserting "MO owns nothing" would be an assertion about the whole database, which
+        // every other test in the build shares. F-4.3.
+        assertThat(deals.findOwnedBy(MO)).extracting(Deal::id).doesNotContain(samsDeal.id());
     }
 
     @Test

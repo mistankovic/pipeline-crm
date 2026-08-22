@@ -1,4 +1,8 @@
 # The datasource is supplied by PostgresBackedTest at runtime.
+#
+# Flyway `clean` is deliberately left at its safe default: these tests may run against a
+# database the environment provided (PIPELINECRM_TEST_DB_URL), and nothing here should be
+# able to drop it. See docs/reviews/stage-4-review.md, finding F-4.5.
 spring:
   jpa:
     open-in-view: false
@@ -6,4 +10,3 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-    clean-disabled: false

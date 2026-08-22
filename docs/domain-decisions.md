@@ -119,3 +119,22 @@ that rule belongs in `Deal`, enforced and tested — not implied by an absent fi
 Parsing text into those enums is the web adapter's job. A use case handed a `String` would
 have to validate it, which means an HTTP concern (a badly typed request) would be decided
 one layer too deep.
+
+## D-17 — Last write wins; there is no optimistic locking
+
+`DealRepository.save` writes the whole row. If a manager closes a deal in the same moment its
+owner reprices it, one of the two changes is lost with no warning.
+
+**Decided: accepted for this demo, not fixed.** Adding a version column means a version on
+`DealSnapshot`, a conflict exception in the domain, a 409 in the API and a retry in the
+browser — a feature in its own right, and one that would spread across every layer this demo
+exists to demonstrate. The pipeline board is single-team and low-contention, and the failure
+is a lost edit rather than a corrupt state: every write goes through the domain's rules, so
+the deal that survives is always internally consistent.
+
+**What would change the decision:** more than one person routinely editing the same deal, or
+any requirement to audit changes. Both make the lost write unacceptable rather than merely
+untidy.
+
+Raised by the Stage 4 review, finding F-4.6, which correctly refused to let "I would rather
+the reviewer decide" stand in for a decision.

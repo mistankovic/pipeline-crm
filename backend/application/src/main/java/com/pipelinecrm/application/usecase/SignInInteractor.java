@@ -8,17 +8,24 @@ import com.pipelinecrm.application.port.out.UserRepository;
 import com.pipelinecrm.application.view.AuthenticatedUser;
 import com.pipelinecrm.application.view.UserViews;
 import com.pipelinecrm.domain.shared.DomainException;
+import com.pipelinecrm.domain.identity.UserId;
 import com.pipelinecrm.domain.shared.EmailAddress;
 import com.pipelinecrm.domain.user.User;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Exchanges credentials for a token.
  *
- * <p>Every way of failing produces the same {@link AuthenticationFailed}: an unknown
- * address, a wrong password, and an address that is not even well formed. Distinguishing
- * them would let anyone discover which accounts exist.
+ * <p>Every way of failing produces the same {@link AuthenticationFailed}: an unknown address,
+ * a wrong password, and an address that is not even well formed. Distinguishing them would let
+ * anyone discover which accounts exist.
+ *
+ * <p>That includes taking the same <em>time</em>. An unknown address still costs one password
+ * check, because returning before the hash comparison announces "no such user" to anyone with
+ * a stopwatch just as clearly as a different message would.
+ * See docs/reviews/stage-4-review.md, finding F-4.2.
  */
 public final class SignInInteractor implements SignIn {
 
@@ -42,10 +49,15 @@ public final class SignInInteractor implements SignIn {
         return new AuthenticatedUser(UserViews.of(user), token.value(), token.expiresAt());
     }
 
+    private static final UserId NOBODY = UserId.of(new UUID(0L, 0L));
+
     private User userClaiming(Credentials credentials) {
-        return addressIn(credentials)
-                .flatMap(users::findByEmail)
-                .orElseThrow(AuthenticationFailed::new);
+        Optional<User> found = addressIn(credentials).flatMap(users::findByEmail);
+        if (found.isEmpty()) {
+            passwords.matches(NOBODY, credentials.password());
+            throw new AuthenticationFailed();
+        }
+        return found.get();
     }
 
     private Optional<EmailAddress> addressIn(Credentials credentials) {

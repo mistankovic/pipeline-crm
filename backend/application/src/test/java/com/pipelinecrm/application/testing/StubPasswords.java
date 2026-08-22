@@ -11,6 +11,7 @@ import java.util.Objects;
 public final class StubPasswords implements PasswordChecker {
 
     private final Map<UserId, String> passwords = new LinkedHashMap<>();
+    private int comparisons;
 
     public void set(UserId user, String password) {
         passwords.put(user, password);
@@ -18,6 +19,12 @@ public final class StubPasswords implements PasswordChecker {
 
     @Override
     public boolean matches(UserId user, String presentedPassword) {
+        comparisons++;
         return Objects.equals(passwords.get(user), presentedPassword);
+    }
+
+    /** How many comparisons were asked for. A failed sign-in must cost the same as a successful one. */
+    public int comparisons() {
+        return comparisons;
     }
 }

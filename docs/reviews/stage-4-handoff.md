@@ -92,3 +92,35 @@ database. It now has 36 of them, which is the promise being kept rather than cas
 * No optimistic locking. Two managers moving the same deal at once, last write wins. This is a
   gap, not an oversight: it needs a version column and a conflict response, and I would rather
   the reviewer decide whether a demo needs it than discover I silently skipped it.
+
+---
+
+# Stage 4 hand-off — round 2 (response to review)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-4.1 constraint test passes on the wrong failure | **Fixed.** Every rejection now asserts **the name of the constraint that fired** (`activities_have_exactly_one_subject`, `activities_type_is_known`, `deals_value_is_not_negative`, `deals_probability_is_a_percentage`, `deals_stage_is_known`). The positive case is asserted — a valid single-subject insert must succeed — and the "both set" case, which nothing covered, is now covered. The swallowing helper is gone: the tests call the insert directly and let AssertJ read the message. Nine tests where there were three. |
+| F-4.2 timing leak reveals which accounts exist | **Fixed in both places.** The reviewer identified the checker; the leak was actually in the interactor, which threw before ever consulting it. `BcryptPasswordChecker` now performs one bcrypt comparison for every answer, against a fixed dummy hash when there is no user, and `SignInInteractor` calls it even when the address matched nobody. Three new tests count the comparisons: unknown address, malformed address and wrong password each cost exactly one, the same as a success. |
+| F-4.3 assertions about a shared database | **Fixed.** `a_deal_owned_by_somebody_else_is_not` asserts `doesNotContain(samsDeal.id())`. `the_demo_users_were_seeded` asserts the three seeded addresses are present rather than that exactly three users exist. Neither can now be broken by a test in another class. |
+| F-4.4 untested defensive branch | **Fixed.** `ActivityMappingTest` — a plain unit test, no database — constructs the row the database forbids and asserts the mapper refuses it. |
+| F-4.5 Flyway `clean` enabled in tests | **Fixed.** Removed, with a comment saying why: these tests may run against a database the environment provided, and nothing here should be able to drop it. |
+| F-4.6 no optimistic locking and no decision | **Fixed as a decision.** D-17 in `docs/domain-decisions.md`: accepted for this demo, with the failure mode spelled out (a lost edit, never a corrupt state, because every write still goes through the domain), the cost of fixing it, and what would change the answer. |
+| F-4.7 `save` costs an extra SELECT | **Refused, with reason.** True, and it is the price of `save` on a detached row with an assigned identity. The alternatives are an `isNew` flag on the row — persistence state leaking into a type the mapper builds — or a hand-written upsert per repository. Both cost more clarity than the SELECT costs milliseconds at this scale. Noted here so the next person finds the reasoning instead of the surprise. |
+
+## The F-4.2 fix is bigger than the finding
+
+The reviewer pointed at `BcryptPasswordChecker`. Fixing only that would have changed nothing:
+`SignInInteractor` never called it for an unknown address. Both had to change, and the test
+that proves it is at the interactor level, counting comparisons — because that is the level
+where the decision to skip the work was being made.
+
+## Metrics (round 2)
+
+| Metric | `domain` | `application` | Gate |
+|--------|---------:|--------------:|------|
+| Line / branch coverage | 100 % / 100 % | 100 % / 100 % | ≥ 95 % |
+| Mutation score | 125/125 | **87/87** | ≥ 90 % |
+| Worst CRAP | 5.00 | 2.00 | ≤ 6 |
+
+`adapter-persistence`: **43 tests**, all against a real PostgreSQL. Full `mvn clean verify`
+green across six modules.
