@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  --color-background: #0c0c0d;
+  --color-foreground: #f3f1ec;
+  --color-card: #141416;
+  --color-card-foreground: #f3f1ec;
+  --color-popover: #17171a;
+  --color-popover-foreground: #f3f1ec;
+  --color-primary: #d8d4cc;
+  --color-primary-foreground: #121214;
+  --color-secondary: #1c1c20;
+  --color-secondary-foreground: #f3f1ec;
+  --color-muted: #1a1a1d;
+  --color-muted-foreground: #9a9892;
+  --color-accent: #222226;
+  --color-accent-foreground: #f3f1ec;
+  --color-destructive: #b42318;
+  --color-destructive-foreground: #fef2f2;
+  --color-border: #2a2a2e;
+  --color-input: #2a2a2e;
+  --color-ring: #d8d4cc;
+  --color-won: #7d9b7a;
+  --color-lost: #b08986;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
