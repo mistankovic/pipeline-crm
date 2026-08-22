@@ -45,6 +45,19 @@ class ReadingUseCasesTest {
     }
 
     @Test
+    void lists_everyone_for_the_owner_picker() {
+        assertThat(application.listUsers.handle()).extracting("name").containsExactly("Sam", "Robin");
+    }
+
+    @Test
+    void never_exposes_anything_secret_about_a_user() {
+        assertThat(application.listUsers.handle()).allSatisfy(user -> {
+            assertThat(user.email()).isNotBlank();
+            assertThat(user.role()).isIn("SALES", "MANAGER");
+        });
+    }
+
+    @Test
     void lists_every_contact() {
         contact("Cara", acme);
         contact("Dev", globex);

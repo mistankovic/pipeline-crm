@@ -40,6 +40,27 @@ class InterfaceAdapterTest {
                     "org.springframework.web..", "org.springframework.http..")
             .as("HTTP is a detail of one adapter");
 
+    /**
+     * Controllers talk in views, requests and enums. If a controller can reach a {@code Deal},
+     * it can ask the deal a question and act on the answer — which is how a business rule ends
+     * up in a controller. Making the entity unreachable removes the temptation entirely.
+     *
+     * <p>Scoped to the controllers rather than to the whole web adapter, because
+     * {@code JwtAccessTokenIssuer} implements an **output** port whose signature names a
+     * {@code User}. That is the port's vocabulary, chosen by the layer inside, and it is
+     * exactly the traffic the dependency rule permits. The first version of this rule failed on
+     * it, correctly.
+     */
+    @ArchTest
+    static final ArchRule no_controller_ever_touches_an_entity = noClasses()
+            .that().resideInAPackage("com.pipelinecrm.adapter.web.rest..")
+            .should().dependOnClassesThat().haveNameMatching(
+                    "com\\.pipelinecrm\\.domain\\.(deal\\.Deal|deal\\.DealSnapshot|deal\\.DealTerms"
+                            + "|deal\\.DealParties|activity\\.Activity|activity\\.DealActivities"
+                            + "|company\\.Company|contact\\.Contact|user\\.User"
+                            + "|shared\\.Money|shared\\.Probability|forecast\\.Forecast)")
+            .as("no controller can reach an entity, so no controller can ask one a question");
+
     @ArchTest
     static final ArchRule ports_are_interfaces = classes()
             .that().resideInAnyPackage("com.pipelinecrm.application.port.in..",
