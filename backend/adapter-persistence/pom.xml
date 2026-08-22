@@ -35,6 +35,10 @@
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>runtime</scope>
@@ -63,12 +67,11 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-database-postgresql</artifactId>
-      <scope>test</scope>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
   <build>
@@ -84,6 +87,17 @@
           <execution>
             <id>test-harness</id>
             <goals><goal>test-jar</goal></goals>
+            <configuration>
+              <!--
+                Publish the harness, not the tests. Shipping the whole test tree put this
+                module's own @SpringBootApplication on the bootstrap module's test classpath,
+                where component scanning found it and its beans collided with the real
+                composition root. A shared artefact should contain exactly what is shared.
+              -->
+              <includes>
+                <include>com/pipelinecrm/adapter/persistence/testing/**</include>
+              </includes>
+            </configuration>
           </execution>
         </executions>
       </plugin>

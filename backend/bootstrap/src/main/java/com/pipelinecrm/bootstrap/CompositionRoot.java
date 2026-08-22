@@ -2,6 +2,8 @@ package com.pipelinecrm.bootstrap;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
 
@@ -20,5 +22,16 @@ public class CompositionRoot {
     @Bean
     public Clock systemClock() {
         return Clock.systemUTC();
+    }
+
+    /**
+     * Password hashing is used by the persistence adapter, which owns the stored hash, and it
+     * was briefly declared by the web adapter. That is the same invisible coupling as the
+     * clock: the Stage 2 review predicted it would recur here, so the bean is declared where
+     * wiring belongs. See docs/reviews/stage-2-review.md, round 2.
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

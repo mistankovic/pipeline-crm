@@ -1,0 +1,9 @@
+# The datasource is supplied by PostgresBackedTest at runtime.
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    clean-disabled: false
