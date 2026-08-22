@@ -106,3 +106,27 @@ naming defect in F-5.2 which is going to cause a bug.
 
 **STAGE 5 NOT APPROVED.** Fix F-5.1 and F-5.2. F-5.3 through F-5.6 may be fixed or refused in
 writing, but F-5.5 must become a written decision either way.
+
+---
+
+# Stage 5 — Adversarial Review (round 2)
+
+| Finding | Verified |
+|---------|----------|
+| F-5.1 | Yes, by my own probe. I added a new `DomainException` subclass to the domain, rebuilt, and the build failed: *"com.pipelinecrm.domain.shared.ProbeFailure must be given a status in HttpTranslation, or listed there as a deliberate server fault."* Reverted. Forgetting to map a failure is now a build failure rather than a production 500. |
+| — | And the test earned its keep before I got to it: it failed on its **first** run, on `CurrencyMismatch`, which nothing had mapped. That is a defect the Builder did not know about, found by a test written because a reviewer complained about a *different* list. |
+| F-5.2 | Yes. `NOT_NEGATIVE` and `LOWEST_PROBABILITY` now mean what they say, and the bare `@Min(0)` is gone with them. |
+| F-5.3 | Yes. |
+| F-5.4 | Yes, **by deletion**, which was the better of the two options I offered. An endpoint that existed because it sounded like one should is the cheapest thing in any codebase to remove and the most expensive to keep. |
+| F-5.5 | Yes. D-18 is a real decision: it says what the rule protects, why creating differs from changing, and names the two changes that would reverse it. |
+| F-5.6 | Yes, and the third assertion is the one I wanted without asking for it — the 500 body must not contain the deal id that appeared in the exception's own message. |
+| Build | `mvn clean install`, six modules, green. 125/125 and 88/88 mutants. |
+
+## Verdict
+
+Controllers that hold no rules, a fitness function that makes it structurally impossible for
+them to acquire any, and a translation table that can no longer fall behind the code. The
+pattern of this stage is worth naming: **two hand-maintained lists, two completeness tests,
+and the second one found a real defect the first day it ran.**
+
+**STAGE 5 APPROVED**
