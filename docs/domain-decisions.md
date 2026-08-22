@@ -158,3 +158,20 @@ measured on, and the domain would need a rule about it.
 
 Raised by the Stage 5 review, finding F-5.5. Recorded here rather than enforced by a validation
 annotation in the web layer, because if the rule existed it would belong in the domain.
+
+## D-19 — No CORS configuration; the browser and the API share an origin
+
+Deferred from the Stage 2 review (finding F-2.8) to the stage that could answer it.
+
+In development the Vite server proxies `/api` to the backend, so the browser only ever talks
+to `localhost:5173`. In the packaged demo (Stage 8) nginx serves the built assets and proxies
+`/api` to the backend, so the browser only ever talks to one origin there too.
+
+**Decided: no CORS headers, deliberately.** Adding them would mean choosing an allowed origin
+list that nothing needs, and `Access-Control-Allow-Origin` is the sort of setting that gets
+widened to `*` by whoever hits the error next. A same-origin deployment has no CORS problem to
+solve, and the absence of the configuration is what keeps it that way.
+
+**What would change the decision:** the frontend being served from a different host to the API
+— at which point the allowed origins are a real, named list, and they go in configuration
+rather than in code.
