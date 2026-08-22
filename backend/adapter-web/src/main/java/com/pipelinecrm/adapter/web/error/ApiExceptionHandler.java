@@ -26,12 +26,10 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler({DomainException.class, ApplicationException.class})
     public ResponseEntity<ApiError> refused(RuntimeException failure) {
-        HttpStatus status = HttpTranslation.statusFor(failure);
-        if (status == null) {
-            return unexpected(failure);
-        }
-        return ResponseEntity.status(status)
-                .body(new ApiError(HttpTranslation.nameFor(failure), failure.getMessage()));
+        return HttpTranslation.statusFor(failure)
+                .map(status -> ResponseEntity.status(status)
+                        .body(new ApiError(HttpTranslation.nameFor(failure), failure.getMessage())))
+                .orElseGet(() -> unexpected(failure));
     }
 
     @ExceptionHandler(MalformedRequest.class)

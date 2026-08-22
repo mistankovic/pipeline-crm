@@ -65,8 +65,9 @@ public class DealController {
     @ResponseStatus(HttpStatus.CREATED)
     public DealView create(@Valid @RequestBody DealRequests.NewDealRequest request,
                            @AuthenticationPrincipal SignedInUser caller) {
+        UUID owner = Optional.ofNullable(request.ownerId()).orElseGet(() -> caller.id().value());
         return creation.handle(new CreateDeal.NewDeal(request.title(), request.companyId(),
-                request.ownerOr(caller), request.value(), request.currency(), request.probability()));
+                owner, request.value(), request.currency(), request.probability()));
     }
 
     @PatchMapping("/{id}/stage")

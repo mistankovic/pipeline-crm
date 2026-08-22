@@ -76,9 +76,11 @@ class SessionApiTest extends ApiTest {
     }
 
     @Test
-    void the_caller_can_ask_who_they_are() throws Exception {
-        http.perform(as(get("/api/users/me"), sam()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value(SAM));
+    void the_sign_in_response_tells_the_browser_everything_it_needs_about_the_caller() throws Exception {
+        signIn(SAM, SAM_PASSWORD)
+                .andExpect(jsonPath("$.user.id").isNotEmpty())
+                .andExpect(jsonPath("$.user.name").value("Sam Sales"))
+                .andExpect(jsonPath("$.user.email").value(SAM))
+                .andExpect(jsonPath("$.user.role").value("SALES"));
     }
 }

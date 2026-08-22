@@ -104,3 +104,35 @@ API tests).
   else; it defaults to the caller. Nothing stops a salesperson naming another owner — the
   domain has no rule about *creating* a deal for someone else, only about changing one. Worth
   a reviewer's opinion on whether that rule should exist.
+
+---
+
+# Stage 5 hand-off — round 2 (response to review)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-5.1 exact-class table with no completeness check | **Fixed, and it immediately paid for itself.** `statusFor` returns `Optional`, and `DELIBERATELY_A_SERVER_FAULT` names the failures that are our fault rather than the caller's. `EveryFailureIsTranslatedTest` scans the classpath for every concrete `DomainException` and `ApplicationException` and requires each to be in one list or the other — and refuses to pass if it found none. **On its first run it failed on `CurrencyMismatch`**, which nothing had mapped: it would have been a silent 500. It is now a declared server fault, with the reasoning written down. `InapplicableActivityHistory` likewise. |
+| F-5.2 `LOWEST_PROBABILITY` used as the floor on money | **Fixed.** `NOT_NEGATIVE` for the two money floors, `LOWEST_PROBABILITY` for the probability floor, and `@Min(0)` replaced by the named constant so the magic number is gone too. |
+| F-5.3 request DTO reaching into the security layer | **Fixed.** `ownerOr(SignedInUser)` is gone; `DealController` reads `request.ownerId()` and falls back to the caller. The body no longer knows authentication exists. |
+| F-5.4 `/api/users/me` read every user to find one | **Fixed by deleting the endpoint.** The reviewer's second suggestion was the right one: the sign-in response already hands the browser its own `UserView`. The endpoint existed because it sounded like one should. A `SessionApiTest` case now pins that the sign-in response carries id, name, email and role, so the frontend has what the endpoint used to provide. |
+| F-5.5 anyone may create a deal for anyone | **Decided, as D-18.** Deliberate: creating a deal for a colleague is a handover, and rule 2 protects a deal that already counts towards somebody's forecast. The decision names what would reverse it — deletable deals, or per-owner targets. Recorded in `domain-decisions.md` rather than enforced with a validation annotation, because if the rule existed it would belong in the domain. |
+| F-5.6 the 500 path was untested | **Fixed.** `ApiExceptionHandlerTest`: a translated failure keeps its name and message; a server fault is 500; and a server fault's body **does not contain the deal id** that was in the exception's own message. |
+
+## The finding the new test found
+
+`CurrencyMismatch` is thrown by `Money.plus` when two currencies are added. It is almost
+certainly unreachable — forecast lines are keyed by currency precisely so that it cannot
+happen — but "almost certainly unreachable" was not why it was absent from the table. It was
+absent because nobody thought about it. A completeness test does not care about the difference,
+which is the point of having one.
+
+## Metrics (round 2)
+
+| Metric | `domain` | `application` |
+|--------|---------:|--------------:|
+| Line / branch coverage | 100 % / 100 % | 100 % / 100 % |
+| Mutation score | 125/125 | 88/88 |
+| Worst CRAP | 5.00 | 2.00 |
+
+`adapter-web` 28 tests, `bootstrap` 46, `adapter-persistence` 43. Full `mvn clean install` green
+across six modules.

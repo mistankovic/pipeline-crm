@@ -138,3 +138,23 @@ untidy.
 
 Raised by the Stage 4 review, finding F-4.6, which correctly refused to let "I would rather
 the reviewer decide" stand in for a decision.
+
+## D-18 — Anyone may open a deal for anyone; only the owner or a manager may change one
+
+`POST /api/deals` accepts an `ownerId` and does not check who the caller is. A salesperson can
+open a deal owned by a colleague — and then, by rule 2, be unable to touch it again.
+
+**Decided: this asymmetry is deliberate.** Creating a deal for a colleague is a normal
+handover ("this lead is really yours"), and the thing rule 2 protects is a deal that already
+exists and already counts towards someone's forecast. A brand new deal at its creator's chosen
+value is not yet anybody's number.
+
+**What this is not:** it is not permission to edit somebody's deal by deleting and recreating
+it. Deleting a deal is not implemented at all, so the loophole does not exist.
+
+**What would change the decision:** deals becoming deletable, or targets being set per owner —
+at which point creating a deal in someone else's name is a way to move a number they are
+measured on, and the domain would need a rule about it.
+
+Raised by the Stage 5 review, finding F-5.5. Recorded here rather than enforced by a validation
+annotation in the web layer, because if the rule existed it would belong in the domain.
