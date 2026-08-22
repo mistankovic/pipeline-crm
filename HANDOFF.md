@@ -42,11 +42,16 @@ Standing rules from the original brief, still binding:
 | Recorded QA runs | `docs/qa/runs/` |
 | Mutation survivor history | `docs/mutation-survivors.md` |
 
-**Branch:** `claude/pipelinecrm-clean-demo-13nqf4`. **Draft PR #1** is open and subscribed.
+**Repository:** `mistankovic/pipeline-crm` (renamed from `uncle-bob-agentic-principles`).
+**Branches:** this work is on `main` and on `claude/pipelinecrm-clean-demo-13nqf4`;
+`grok-pipeline-crm` is a separate implementation of the same brief by another agent — do not
+touch it.
 
-> The original brief said "commit directly to main, no PRs". The harness mandates the branch
-> and a draft PR. The conflict is flagged in the PR body rather than silently resolved. Keep
-> using this branch.
+> PR #1 was closed without merging when the repo was repurposed to host two implementations.
+> The user then asked for this work on `main` directly, which is what the original brief said
+> anyway. `main` had been force-pushed to an unrelated signpost commit, so this history was
+> **merged** into it rather than force-pushed over it: that commit's `.gitignore` entries and
+> its pointer to `grok-pipeline-crm` are both preserved. Do not force-push `main`.
 
 ## 3. Stage checklist — all closed
 
@@ -115,6 +120,10 @@ procedure fails at launch — which is not a QA result. This is documented in th
   `PersistenceTestApplication` clashes with `CompositionRoot` over the `passwordEncoder` bean.
   To run bootstrap API tests, `install -DskipTests` first, then run **without** `-am`.
 - The surefire property is `surefire.failIfNoSpecifiedTests`, **not** `failIfNoSpecifiedTests`.
+
+**`/tmp` can be cleared mid-session.** It happened here: it deleted a build log being written
+and, worse, `/tmp/pipelinecrm/pg.log`, which PostgreSQL needs to exist and be writable by the
+`postgres` user. Keep logs you care about in the scratchpad directory, not `/tmp`.
 
 **Shell:**
 - `cd` **persists between Bash tool calls.** This caused several "could not find the selected

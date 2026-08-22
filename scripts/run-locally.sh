@@ -84,8 +84,31 @@ if [[ ! -d "$CLUSTER" ]]; then
     chown postgres "$CLUSTER"
     su postgres -c "$PGBIN/initdb -D $CLUSTER -U pipelinecrm --auth=trust" >/dev/null
 fi
-su postgres -c "$PGBIN/pg_ctl -D $CLUSTER -o '-p $PGPORT -k /tmp' -l $RUNTIME/pg.log start" >/dev/null 2>&1 || true
-until psql -h 127.0.0.1 -p "$PGPORT" -U pipelinecrm -d postgres -c 'select 1' >/dev/null 2>&1; do sleep 1; done
+# postgres runs as its own user and must be able to write its log, or pg_ctl fails before it
+# has anything to say. The runtime directory belongs to whoever ran this script.
+touch "$RUNTIME/pg.log" && chown postgres "$RUNTIME/pg.log"
+
+# pg_ctl also fails when a server is already running, which is fine. Telling the two apart is
+# the point: an unbounded wait after a genuinely failed start is a hang with no explanation,
+# which is what this script used to do.
+if ! su postgres -c "$PGBIN/pg_ctl -D $CLUSTER -o '-p $PGPORT -k /tmp' -l $RUNTIME/pg.log start" >/dev/null 2>&1; then
+    if ! psql -h 127.0.0.1 -p "$PGPORT" -U pipelinecrm -d postgres -c 'select 1' >/dev/null 2>&1; then
+        echo "PostgreSQL would not start. Last lines of $RUNTIME/pg.log:" >&2
+        tail -20 "$RUNTIME/pg.log" >&2
+        exit 1
+    fi
+fi
+
+waited=0
+until psql -h 127.0.0.1 -p "$PGPORT" -U pipelinecrm -d postgres -c 'select 1' >/dev/null 2>&1; do
+    if (( waited >= 60 )); then
+        echo "PostgreSQL did not accept connections on $PGPORT within 60s." >&2
+        tail -20 "$RUNTIME/pg.log" >&2
+        exit 1
+    fi
+    sleep 1
+    waited=$(( waited + 1 ))
+done
 psql -h 127.0.0.1 -p "$PGPORT" -U pipelinecrm -d postgres \
      -c "CREATE DATABASE pipelinecrm OWNER pipelinecrm" >/dev/null 2>&1 || true
 echo "    listening on $PGPORT"
