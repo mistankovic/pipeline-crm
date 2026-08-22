@@ -90,7 +90,7 @@ recorded as passing. That is the mechanism working.
 The brief's four nouns are now all create-and-edit except where immutability is a stated
 design decision with reasoning. Every gate is green at values that did not move: 100 % line and
 branch, zero surviving mutants out of 222, worst CRAP 4 against a limit of 6. The metrics in the
-README match the reports. Sixty-seven findings across nine gates are recorded with their fixes,
+README match the reports. Sixty-eight findings across nine gates are recorded with their fixes,
 including the ones that were embarrassing and the three in this stage that were caught only
 because someone re-read the original brief at the end.
 

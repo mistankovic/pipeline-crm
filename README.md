@@ -252,8 +252,8 @@ None of them can be waived without an amendment recorded in `docs/reviews/`.
 
 Complete. Stages 0–8, each gated by an adversarial review recorded in `docs/reviews/`.
 
-**Sixty-seven review findings** were raised and resolved across those gates — 11, 9, 8, 7, 7, 6,
-5, 6 and 8 at stages 0 through 8. Every one is written down with the fix that answered it,
+**Sixty-eight review findings** were raised and resolved across those gates — 11, 9, 8, 7, 7, 6,
+5, 6 and 9 at stages 0 through 8. Every one is written down with the fix that answered it,
 including the embarrassing ones: a QA suite whose setup was undocumented, two Gherkin scenarios
 that could not fail, a timing side channel that leaked which email addresses exist, and a
 catch-all error handler that turned every client mistake into a 500.
