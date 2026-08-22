@@ -131,3 +131,39 @@ two of them cannot fail is exactly the failure mode this whole project claims to
 
 **STAGE 3 NOT APPROVED.** Fix F-3.1 through F-3.3. F-3.4 through F-3.7 may be fixed or refused
 in writing.
+
+---
+
+# Stage 3 — Adversarial Review (round 2)
+
+| Finding | Verified |
+|---------|----------|
+| F-3.1 | Yes, three ways. (1) The reworded sentences are in the feature files. (2) I re-ran the Builder's sabotage and confirmed `recording_activities.feature:21` and `:26` now fail. (3) **I wrote my own probe scenario** that calls a "tries to" step and asserts nothing, and the hook caught it: *"a step was refused and no Then examined the refusal, so this scenario passed because nothing happened: no company with id …"*. Reverted. |
+| F-3.2 | Yes. Both paths go through `PartyIndex`, which goes through `Required.found`. |
+| F-3.3 | Yes, and fixed at the port as I asked rather than with a cache. `everyone()` and `everyCompany()` no longer exist — I grepped. |
+| F-3.4, F-3.5, F-3.6 | Yes. Removing the `kind` literal in favour of deriving it from the identifier's type is a better fix than the one I described, and `UnknownEntityTest` pins the wording for the layer that has not been written yet. |
+| F-3.7 | **Refusal accepted.** The argument is a good one and it is evidenced: my own F-3.2 probe was a one-line change *because* the fixture is open. I was applying a production rule to a diagnostic tool. |
+| Metrics | Re-ran `mvn verify`: 100 % line and branch on both inner modules, **125/125 and 86/86 mutants killed**, worst CRAP 5.00 and 2.00, CPD and Checkstyle clean, six modules green. |
+
+## The finding I want to record for the rest of this project
+
+F-3.1 is the most important defect found so far, and none of the tooling could have found it.
+Coverage was 100 %: the code *was* executed. Mutation score was 100 %: every mutant was
+killed — by other tests. CRAP was 2.00. Every gate in the Constitution was green while two
+scenarios were incapable of failing, one of them the sole executable evidence for a documented
+domain decision.
+
+The lesson is not "add another tool". It is that **a metric tells you what was executed, never
+what was depended upon**, and the only defence is someone asking of each test: what would have
+to break for this to go red? The `@After` hook now automates that question for one specific
+failure mode. The question itself still has to be asked by a person, and I will keep asking it
+in Stages 4 to 8.
+
+## Verdict
+
+Fourteen use cases holding no business rules, 69 scenarios that can all now fail, both inner
+modules at 100 % across coverage and mutation, and the two most valuable defects of this stage
+found by a tool and by a review respectively — each fixed at the root rather than at the
+symptom.
+
+**STAGE 3 APPROVED**
