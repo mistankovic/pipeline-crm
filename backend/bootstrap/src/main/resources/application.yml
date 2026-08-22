@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: pipelinecrm
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/pipelinecrm}
+    username: ${DATABASE_USER:pipelinecrm}
+    password: ${DATABASE_PASSWORD:pipelinecrm}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: ${SERVER_PORT:8080}

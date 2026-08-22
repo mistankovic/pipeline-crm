@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.pipelinecrm</groupId>
+    <artifactId>pipelinecrm-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>domain</artifactId>
+  <name>PipelineCRM :: domain</name>
+  <description>Enterprise business rules. Depends on the JDK and nothing else.</description>
+
+  <properties>
+    <coverage.skip>false</coverage.skip>
+    <crap.skip>false</crap.skip>
+  </properties>
+
+  <dependencies>
+    <!-- Compile scope is intentionally EMPTY. See CONSTITUTION.md section 1. -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>domain-has-no-compile-dependencies</id>
+            <phase>validate</phase>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <searchTransitive>true</searchTransitive>
+                  <excludes>
+                    <exclude>*:*:*:*:compile</exclude>
+                    <exclude>*:*:*:*:runtime</exclude>
+                    <exclude>*:*:*:*:provided</exclude>
+                  </excludes>
+                  <message>The domain module must have zero compile/runtime/provided dependencies.</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.pitest</groupId>
+        <artifactId>pitest-maven</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

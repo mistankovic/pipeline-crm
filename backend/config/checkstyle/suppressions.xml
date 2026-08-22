@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<!--
+  Every suppression here needs a written reason. Unexplained suppressions are rejected
+  at the review gate.
+-->
+<suppressions>
+  <!--
+    Spring instantiates the @SpringBootApplication class as a configuration bean and
+    proxies it with CGLIB, so it cannot have a private constructor. Checkstyle sees a
+    class whose only method is static main and calls it a utility class. It is not one:
+    it is the composition root. Scoped to that single file.
+  -->
+  <suppress checks="HideUtilityClassConstructor" files="PipelineCrmApplication\.java$"/>
+</suppressions>
