@@ -153,3 +153,49 @@ earned.
 
 **STAGE 2 NOT APPROVED.** Fix F-2.1 through F-2.4. F-2.5 through F-2.8 may be fixed or
 refused in writing.
+
+---
+
+# Stage 2 — Adversarial Review (round 2)
+
+| Finding | Verified |
+|---------|----------|
+| F-2.1 | Yes, and the second attempt is the right one. `mvn -pl bootstrap test -Dtest=AnalysedCodeTest` now fails and names all 210 offending class locations; the reactor build passes. The rule distinguishes *where an artefact came from* rather than *what shape it is*, which is what I actually wanted and not what I asked for — the Builder's first version rejected the fresh reactor jars too and correctly rejected its own fix. |
+| F-2.2 | Accepted. Six tests pin the branch choice, including both blank-string cases, which is the shape of bug that would otherwise silently switch every CI run onto the wrong database. The container start remains unproven and the hand-off still says so in the same words. |
+| F-2.3 | Yes. 23 tests. I checked the list against the one I demanded and every item is there. |
+| F-2.4 | Yes. `Clock` is in `bootstrap`. |
+| F-2.5, F-2.7 | Yes. |
+| F-2.6 | **Refusal accepted.** The argument is right: I was asking for indirection to satisfy a symmetry rule, and the named constant addresses the only concrete complaint. |
+| F-2.8 | Deferral accepted, with the decision assigned to Stage 6. |
+
+## The two defects the Builder found while fixing F-2.3
+
+I want these on the record because they justify the finding better than my own reasoning did.
+
+The clock bug I would have accepted as a style point. The **500 on a malformed token
+subject** is a genuine production defect: a caller sending a syntactically valid JWT with a
+non-UUID subject would have received `500 Internal Server Error` from a security filter —
+leaking that something crashed rather than saying "I do not know who you are", and turning
+a routine rejection into an alert. It was introduced in Stage 1, by a fix I approved, and my
+Stage 1 review did not catch it because at that point no caller of `UserId.fromString`
+existed. That is an argument for writing the tests at the moment the class appears rather
+than at the stage the plan assigns them to.
+
+## New debt I am raising now rather than after it bites
+
+`SecurityConfiguration` publishes a `PasswordEncoder` bean in **`adapter-web`**. Stage 4
+will implement `PasswordChecker` in **`adapter-persistence`**, and the obvious way to write
+it is to inject that encoder — which recreates F-2.4 exactly, in the opposite direction,
+through the same invisible door.
+
+**The Stage 4 review will check this specifically.** Either the encoder moves to
+`CompositionRoot`, or `PasswordChecker` is implemented in the web adapter and reads the hash
+through a port. I do not mind which; I mind that it is decided rather than stumbled into.
+
+## Verdict
+
+Three independent enforcement mechanisms for the dependency rule, and the one hole I found
+in the enforcement itself is now closed by a rule that guards the other rules. The security
+skeleton went from zero tests to twenty-three and produced two real defects on the way.
+
+**STAGE 2 APPROVED**
