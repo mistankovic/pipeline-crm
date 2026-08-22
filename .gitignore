@@ -40,3 +40,16 @@ reports/
 coverage/
 playwright-report/
 test-results/
+
+# Kept from the branch main previously pointed at, so both implementations
+# in this repository share one ignore list.
+.vercel/
+screenshots/
+artifacts/
+.env
+.env.*
+.pglite/
+*.local
+AGENTS.md
+.grok/
+.node_modules.lock

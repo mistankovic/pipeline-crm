@@ -9,6 +9,11 @@ first: it defines the layers, the dependency rule, and every quality gate. Every
 work was gated by an adversarial review; those reviews, and every finding they raised, are in
 **[docs/reviews/](docs/reviews/)**.
 
+> **Another implementation of the same brief** lives on the
+> [`grok-pipeline-crm`](https://github.com/mistankovic/pipeline-crm/tree/grok-pipeline-crm)
+> branch, which is where this repository's `main` pointed before this one landed. Both were
+> built from the same specification; neither is a fork of the other.
+
 ## What it does
 
 Sales people keep companies, contacts and deals. A deal moves through
