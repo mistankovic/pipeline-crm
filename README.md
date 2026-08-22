@@ -50,7 +50,18 @@ mvn -f backend/pom.xml verify -Dpit.skip=true
 cd frontend && npm ci && npm run check && npm run test:unit
 ```
 
-Integration tests start a real PostgreSQL via Testcontainers, so Docker must be running.
+Integration tests run against a **real PostgreSQL** — never an in-memory substitute. By
+default they start one with Testcontainers, so Docker must be running. If the environment
+already has a PostgreSQL (a CI service container, a local server), point the tests at it
+instead and no container is started:
+
+```bash
+export PIPELINECRM_TEST_DB_URL=jdbc:postgresql://127.0.0.1:5432/pipelinecrm_test
+export PIPELINECRM_TEST_DB_USER=pipelinecrm
+export PIPELINECRM_TEST_DB_PASSWORD=pipelinecrm
+mvn -f backend/pom.xml verify
+```
+
 The CRAP gate shells out to `python3`.
 
 ## Quality gates

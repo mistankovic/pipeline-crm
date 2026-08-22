@@ -25,6 +25,8 @@
       AbbreviationAsWordInName - test names spell out domain acronyms deliberately.
   -->
   <suppress id="methodNameProduction" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress id="constantNameProduction" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress id="constantNameTest" files="[\\/]src[\\/]main[\\/]"/>
   <suppress id="methodNameTest" files="[\\/]src[\\/]main[\\/]"/>
   <suppress checks="MagicNumber" files="[\\/]src[\\/]test[\\/]"/>
   <suppress checks="VisibilityModifier" files="[\\/]src[\\/]test[\\/]"/>

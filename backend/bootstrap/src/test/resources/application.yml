@@ -1,0 +1,18 @@
+# Test-time configuration. The datasource is supplied by PostgresBackedTest at runtime.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+pipelinecrm:
+  security:
+    jwt:
+      secret: test-secret-that-is-long-enough-for-hs256
+      validity: PT8H
+      issuer: pipelinecrm-test
+
+logging:
+  level:
+    org.hibernate.SQL: warn

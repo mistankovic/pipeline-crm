@@ -36,7 +36,17 @@
     <module name="MemberName"/>
     <module name="ParameterName"/>
     <module name="LocalVariableName"/>
-    <module name="ConstantName"/>
+    <!--
+      Same split as MethodName: production constants SHOUT_CASE, while ArchUnit rule
+      fields in tests are static final and read as sentences.
+    -->
+    <module name="ConstantName">
+      <property name="id" value="constantNameProduction"/>
+    </module>
+    <module name="ConstantName">
+      <property name="id" value="constantNameTest"/>
+      <property name="format" value="^([A-Z][A-Z0-9]*(_[A-Z0-9]+)*|[a-z][a-z0-9]*(_[a-z0-9]+)*)$"/>
+    </module>
     <module name="AbbreviationAsWordInName">
       <property name="allowedAbbreviationLength" value="1"/>
       <property name="ignoreStaticFinal" value="true"/>
