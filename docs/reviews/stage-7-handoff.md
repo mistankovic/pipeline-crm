@@ -136,3 +136,44 @@ running system did.
 | CPD @ 30 tokens · Checkstyle | 0 · 0 | 0 · 0 | 0 |
 
 **34 of 34 QA procedures pass**, recorded in `docs/qa/runs/2026-08-22.md`.
+
+---
+
+# Stage 7 hand-off — round 3 (response to review round 2)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-7.6 the catch-all flattened five client errors into 500 | **Fixed.** `ApiExceptionHandler` extends `ResponseEntityExceptionHandler`, so the failures Spring already classifies keep their statuses, and `createResponseEntity` is overridden to re-body them into this project's `{error, message}` shape — one format for every failure. The catch-all stays, for what is genuinely unexpected. Five new tests, one per status. |
+
+Verified against the running application, every case:
+
+```
+malformed JSON body : 400        unknown route        : 404
+wrong content type  : 415        genuine server fault : 500
+bad uuid in path    : 400        anonymous request    : 401
+method not allowed  : 405
+```
+
+And the bodies keep one shape: `{"error":"BAD_REQUEST","message":"Bad Request"}`,
+`{"error":"NOT_FOUND","message":"Not Found"}`.
+
+## What I got wrong, and what it cost
+
+The F-7.1 fix was a one-line catch-all, and it was too broad by exactly one line. It fixed the
+finding and broke five things the reviewer had not asked about — a strictly worse API than the
+one being complained about, since a wrong status on *every integration attempt* beats a wrong
+status on a rare server fault.
+
+The lesson is not "be more careful". It is that **I had no test asserting what a bad request
+returns**, so nothing objected. There are eight now, and the tests are the reason a third
+version of this handler cannot quietly flatten them again.
+
+## Final state
+
+| Metric | `domain` | `application` |
+|--------|---------:|--------------:|
+| Line / branch coverage | 100 % / 100 % | 100 % / 100 % |
+| Mutation score | 124/124 | 88/88 |
+| Worst CRAP | 4.00 | 2.00 |
+
+**34 of 34 QA procedures pass.** `mvn clean install` green across six modules.

@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,6 +49,40 @@ class ServerFaultApiTest extends ApiTest {
     @Test
     void an_anonymous_caller_is_still_refused_with_401() throws Exception {
         mockMvc.perform(get("/api/explode")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void a_malformed_body_is_400_and_not_500() throws Exception {
+        mockMvc.perform(as(post("/api/companies"), sam()).content("{\"name\":"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void a_body_that_is_not_json_is_415_and_not_500() throws Exception {
+        mockMvc.perform(post("/api/companies")
+                        .header("Authorization", "Bearer " + sam())
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("hello"))
+                .andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
+    void an_identifier_that_is_not_a_uuid_is_400_and_not_500() throws Exception {
+        mockMvc.perform(as(get("/api/deals/not-a-uuid"), sam()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void a_method_the_route_does_not_support_is_405_and_not_500() throws Exception {
+        mockMvc.perform(as(delete("/api/deals"), sam()))
+                .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void every_failure_answers_in_the_same_shape() throws Exception {
+        mockMvc.perform(as(get("/api/deals/not-a-uuid"), sam()))
+                .andExpect(jsonPath("$.error").isNotEmpty())
+                .andExpect(jsonPath("$.message").isNotEmpty());
     }
 
     /** Exists only to fail. Registered for this test class alone. */

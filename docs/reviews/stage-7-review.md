@@ -106,3 +106,63 @@ previous stage, which is exactly the kind of interaction only end-to-end poking 
 
 **STAGE 7 NOT APPROVED.** Fix F-7.1 and F-7.2, and add the procedures in F-7.3 and F-7.4.
 F-7.5 may be deferred to Stage 8 if the compose file lands there.
+
+---
+
+# Stage 7 — Adversarial Review (round 2)
+
+| Finding | Verified |
+|---------|----------|
+| F-7.1 | Partly — see F-7.6. `GET /error` with a token is 500, an anonymous request is still 401, and `ServerFaultApiTest` pins all three cases. The *original* defect is gone. The fix introduced a new one. |
+| F-7.2 | Yes. The exact request that produced `SQLState 22003` now returns `400 {"error":"InvariantViolation","message":"amount must not exceed 999999999999.99, was 99999999999999999999.00"}`. Checking **after** rounding, and testing the rounding boundary, is more careful than I asked for. |
+| F-7.3, F-7.4 | Yes. 34 of 34 procedures pass. QA-7.2's real assertion — that the board still works after storing `DROP TABLE deals;--` — is the right way to write that test. |
+| F-7.5 | Deferred to Stage 8 as agreed. |
+
+## F-7.6 — BLOCKER. The catch-all turned every *client* error into a server error.
+
+I kept poking after the fix:
+
+```
+malformed JSON body : 500      (should be 400)
+wrong content type  : 500      (should be 415)
+bad uuid in path    : 500      (should be 400)
+DELETE /api/deals   : 500      (should be 405)
+unknown route       : 500      (should be 404)
+```
+
+Every one of these is Spring telling the truth with a well-typed exception —
+`HttpMessageNotReadableException`, `HttpMediaTypeNotSupportedException`,
+`MethodArgumentTypeMismatchException`, `HttpRequestMethodNotSupportedException`,
+`NoResourceFoundException`. The new `@ExceptionHandler(Exception.class)` catches all of them
+first and answers `{"error":"InternalError","message":"the request could not be completed"}`.
+
+So the API now blames itself for the caller's mistakes, and a developer integrating against it
+is told "the request could not be completed" when they sent a typo in a URL. F-7.1 was fixed by
+over-reaching: the backstop is correct in principle and must stop swallowing the exceptions
+Spring already classifies.
+
+**Required:** the handler extends `ResponseEntityExceptionHandler` (which maps all of the above
+correctly) and keeps the catch-all for what is genuinely unexpected. And a test per status, so
+the next backstop cannot flatten them again.
+
+## Recorded so nobody re-raises it: appending one character to a token is not a forgery
+
+`Authorization: Bearer <token>x` returns 200, and I nearly filed it as critical. It is not.
+
+The HS384 signature is 48 bytes, written as exactly 64 base64url characters. A 65th character
+contributes six bits — fewer than a byte — so the decoder discards it and recovers the identical
+48 signature bytes. The attacker has presented *the same token*, spelled redundantly. Two extra
+characters (`401`), a changed final character (`401`) and a tampered payload claiming
+`role: MANAGER` (`401`) all fail, which is the property that matters.
+
+Writing this down because it looks alarming, took ten minutes to disprove, and will look exactly
+as alarming to the next person.
+
+## Verdict
+
+Both original findings are genuinely fixed, and F-7.2's fix is better than the one I asked for.
+But the F-7.1 fix flattened five correct client-error statuses into 500, which is a worse API
+than the one I complained about — a 401 on a server fault misleads about *whose* fault it is;
+a 500 on a bad URL does the same in the other direction, on every integration attempt.
+
+**STAGE 7 STILL NOT APPROVED.** Fix F-7.6.
