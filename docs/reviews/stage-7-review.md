@@ -166,3 +166,53 @@ than the one I complained about — a 401 on a server fault misleads about *whos
 a 500 on a bad URL does the same in the other direction, on every integration attempt.
 
 **STAGE 7 STILL NOT APPROVED.** Fix F-7.6.
+
+---
+
+# Stage 7 — Adversarial Review (round 3)
+
+I re-ran every probe from round 2 against the running application:
+
+```
+malformed JSON body : 400   ✓        unknown route        : 404   ✓
+wrong content type  : 415   ✓        genuine server fault : 500   ✓
+bad uuid in path    : 400   ✓        anonymous request    : 401   ✓
+method not allowed  : 405   ✓
+```
+
+Every status is the right one, and every body is the same shape — `{"error":…,"message":…}` —
+including the ones Spring produced, which are re-bodied rather than left in Spring's default
+format. A client can parse one thing.
+
+34 of 34 QA procedures pass. `mvn clean install` green. 124/124 and 88/88 mutants. Worst CRAP
+4.00 and 2.00.
+
+## On the Builder's own post-mortem
+
+The hand-off says the real problem was not carelessness but that *"I had no test asserting what
+a bad request returns, so nothing objected"*. That is exactly right, and it is the same
+sentence as F-3.1 and F-6.1 in a third costume: **the gap was never in the code, it was in
+what nobody had asked the code to promise.** Three times now, in three different layers, and
+each time the fix has been a test that makes the promise explicit rather than a rule about
+being more careful.
+
+## What this stage actually demonstrated
+
+Every gate in this project was green, and hostile QA still found:
+
+* a request a signed-in user could make and **be logged out by** (F-7.1),
+* a business rule enforced only by a `NUMERIC(19,4)` column (F-7.2),
+* five client errors reported as server errors (F-7.6, introduced by the F-7.1 fix).
+
+None was reachable by coverage, mutation score, CRAP, ArchUnit or Checkstyle. All three needed
+somebody to send a rude request to a running system and look at what came back. That is the
+argument for this stage existing, and it is now made in evidence rather than in principle.
+
+## Verdict
+
+The procedures are followable by a stranger, proven able to fail, and they found a leaked rule
+that six stages of review had missed. The hardening drove CRAP to the Constitution's *target*
+across every method in both inner modules, not merely under its limit. And the error surface is
+now honest about whose fault a failure is — which took three attempts and is worth all three.
+
+**STAGE 7 APPROVED**
