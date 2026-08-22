@@ -3,6 +3,7 @@ package com.pipelinecrm.domain.deal;
 import com.pipelinecrm.domain.shared.Probability;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.Optional;
 
 /**
@@ -22,11 +23,21 @@ public enum DealStage {
     CLOSED_WON,
     CLOSED_LOST;
 
-    private static final Map<DealStage, DealStage> NEXT_STAGE = Map.of(
-            LEAD, QUALIFIED,
-            QUALIFIED, PROPOSAL,
-            PROPOSAL, NEGOTIATION,
-            NEGOTIATION, CLOSED_WON);
+    /**
+     * The whole state machine, as a table you can read in one glance.
+     *
+     * <p>It was three conditionals — closed, lost-from-anywhere, next-in-line — which is how a
+     * rule ends up spread across a method body. As data it is complexity 2 instead of 5, and
+     * the pipeline is visible rather than inferred. Constitution §3.1 sets the CRAP *target*
+     * at 4; this was the only method above it.
+     */
+    private static final Map<DealStage, Set<DealStage>> ALLOWED_NEXT = Map.of(
+            LEAD, Set.of(QUALIFIED, CLOSED_LOST),
+            QUALIFIED, Set.of(PROPOSAL, CLOSED_LOST),
+            PROPOSAL, Set.of(NEGOTIATION, CLOSED_LOST),
+            NEGOTIATION, Set.of(CLOSED_WON, CLOSED_LOST),
+            CLOSED_WON, Set.of(),
+            CLOSED_LOST, Set.of());
 
     public boolean isClosed() {
         return this == CLOSED_WON || this == CLOSED_LOST;
@@ -37,13 +48,8 @@ public enum DealStage {
     }
 
     public boolean allowsTransitionTo(DealStage target) {
-        if (isClosed() || target == null) {
-            return false;
-        }
-        if (target == CLOSED_LOST) {
-            return true;
-        }
-        return NEXT_STAGE.get(this) == target;
+        // Set.of(...) throws on a null argument rather than answering false, so ask first.
+        return target != null && ALLOWED_NEXT.get(this).contains(target);
     }
 
     /** The probability a stage dictates, if it dictates one at all. */

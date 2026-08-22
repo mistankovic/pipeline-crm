@@ -6,7 +6,6 @@ import com.pipelinecrm.application.port.in.ViewContactTimeline;
 import com.pipelinecrm.application.view.ActivityView;
 import com.pipelinecrm.application.view.ContactView;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -58,10 +57,18 @@ public class ContactController {
         return timeline.handle(contactId);
     }
 
-    /** What a caller sends to add a contact. */
+    /**
+     * What a caller sends to add a contact.
+     *
+     * <p>There is deliberately no {@code @Email} here. What counts as an email address is
+     * decided by {@code EmailAddress} in the domain, and a second opinion in this layer is a
+     * second definition — one that shadowed the domain's own message and could disagree with
+     * it outright. Presence and length are shape; validity is the domain's business.
+     * See docs/reviews/stage-7-handoff.md.
+     */
     public record NewContactRequest(
             @NotNull UUID companyId,
             @NotBlank @Size(max = LONGEST_NAME) String name,
-            @NotBlank @Email String email) {
+            @NotBlank String email) {
     }
 }

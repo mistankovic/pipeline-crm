@@ -62,10 +62,13 @@ class ContactAndForecastApiTest extends ApiTest {
     }
 
     @Test
-    void a_contact_with_an_address_that_is_not_one_is_400() throws Exception {
+    void a_contact_with_an_address_that_is_not_one_is_refused_in_the_domains_words() throws Exception {
         http.perform(as(post("/api/contacts"), sam()).content("""
                         {"companyId": "%s", "name": "Cara", "email": "not-an-address"}""".formatted(acme)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("InvariantViolation"))
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("not an email address")));
     }
 
     @Test

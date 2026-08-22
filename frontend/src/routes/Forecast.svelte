@@ -39,7 +39,15 @@
   {#if forecast}
     <table class="card" data-testid="forecast-table">
       <thead>
-        <tr><th>{forecast.dimension === 'OWNER' ? 'Owner' : 'Stage'}</th><th>Weighted</th></tr>
+        <!--
+          The heading comes from the response, not from the dropdown, so it changes only when
+          the new grouping has actually arrived. A QA script that waits for it cannot read the
+          previous grouping's rows by mistake.
+        -->
+        <tr>
+          <th data-testid="forecast-grouping">{forecast.dimension === 'OWNER' ? 'Owner' : 'Stage'}</th>
+          <th>Weighted</th>
+        </tr>
       </thead>
       <tbody>
         {#each forecast.lines as line (line.group + line.weightedValue.currency)}
