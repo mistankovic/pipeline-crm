@@ -1,6 +1,7 @@
 package com.pipelinecrm.adapter.web.security;
 
 import com.pipelinecrm.domain.identity.UserId;
+import com.pipelinecrm.domain.shared.DomainException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,9 +33,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String ROLE_PREFIX = "ROLE_";
 
     private final JwtSettings settings;
+    private final Clock clock;
 
-    public JwtAuthenticationFilter(JwtSettings settings) {
+    public JwtAuthenticationFilter(JwtSettings settings, Clock clock) {
         this.settings = settings;
+        this.clock = clock;
     }
 
     @Override
@@ -55,23 +60,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = Jwts.parser()
                     .verifyWith(JwtKeys.from(settings))
                     .requireIssuer(settings.issuer())
+                    // Expiry is judged against the injected clock, not against whatever the
+                    // host machine thinks the time is. A filter that cannot be told the time
+                    // cannot be tested for expiry.
+                    .clock(() -> Date.from(clock.instant()))
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
             return Optional.of(new SignedInUser(
                     UserId.fromString(claims.getSubject()), claims.get("role", String.class)));
-        } catch (JwtException | IllegalArgumentException rejected) {
+        } catch (JwtException | DomainException rejected) {
+            // A token we cannot make sense of means we do not know who is calling. That is
+            // not a server fault, so it must not escape as one: DomainException is caught
+            // because a subject that is not a UUID is rejected by the domain's own guard.
             return Optional.empty();
         }
     }
 
     private void rememberForThisRequest(SignedInUser user) {
         var authorities = List.of(new SimpleGrantedAuthority(ROLE_PREFIX + user.role()));
+        // Credentials are null: the token was already verified, and keeping a copy of it in
+        // the security context would serve nothing but a leak.
         SecurityContextHolder.getContext()
-                .setAuthentication(new UsernamePasswordAuthenticationToken(user, token(), authorities));
-    }
-
-    private String token() {
-        return "n/a";
+                .setAuthentication(new UsernamePasswordAuthenticationToken(user, null, authorities));
     }
 }

@@ -90,3 +90,41 @@ mvn -f backend/pom.xml verify                        → BUILD SUCCESS, all modu
 * Controllers, DTOs, the exception handler — Stage 5.
 * Use-case implementations and Cucumber glue — Stage 3.
 * `application` still carries the Stage 0 gate opt-out; Stage 3 discharges it.
+
+---
+
+# Stage 2 hand-off — round 2 (response to review)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-2.1 architecture tests can pass against stale bytecode | **Fixed.** New `AnalysedCodeTest`: every analysed `com.pipelinecrm` class must come from inside this checkout, found by walking up to the `.mvn` marker Stage 0 added. Verified both ways — the reactor build passes, `mvn -pl bootstrap test` now **fails** with the location of every class resolved from the local repository and a message telling the reader to run from the reactor root. The first version of this rule was too crude (it rejected all jars, including the fresh reactor ones a `verify` build legitimately produces); the second distinguishes *where the artefact came from* rather than *what shape it is*. |
+| F-2.2 the default database path was never executed | **Partly fixed, honestly.** `PostgresDatabase.chooseFrom(UnaryOperator<String>)` extracts the selection from the environment lookup, and six tests pin it: absent variable, blank variable, set variable, and both credential fallbacks including the blank case. Starting a container still cannot be executed here and the hand-off still says so. What is now proven is the branch *choice*; what remains unproven is the container *start*. |
+| F-2.3 the security skeleton had no tests | **Fixed.** 23 tests across `JwtAccessTokenIssuerTest` (6), `JwtAuthenticationFilterTest` (11), `JwtSettingsTest` (6): expired token, foreign secret, foreign issuer, missing header, non-bearer header, gibberish, non-UUID subject, role granted, credentials not retained, request always continues, and the issuer's subject/role/issuer/expiry/no-email-leak. |
+| F-2.4 the adapters were coupled through the Spring context | **Fixed.** The `Clock` bean moved from `PersistenceConfiguration` to a new `CompositionRoot` in `bootstrap`. The comment there explains the failure mode so it does not come back. |
+| F-2.5 `token()` returning `"n/a"` | **Fixed.** Credentials are `null`, with a comment saying why keeping the token would be a leak. |
+| F-2.6 `JwtSettings` mixes validation and defaulting | **Refused, with reason.** Both are constructor responsibilities for a settings record, and splitting them would mean either a builder or a second type for four lines of code. The magic number is now a named constant. I would rather leave this than add indirection to satisfy a symmetry argument. |
+| F-2.7 an invented route | **Fixed.** `SecurityConfiguration.SIGN_IN_ROUTE` is public, and the comment tells Stage 5 what breaks if the controller disagrees with it. |
+| F-2.8 no CORS | **Deferred to Stage 6, deliberately.** The Vite proxy covers development. The decision belongs with the frontend, not before it. |
+
+## Two real defects these tests found
+
+1. **`JwtAuthenticationFilter` judged expiry against the host clock**, not the injected one,
+   so token expiry was untestable and unrepeatable. It now parses with
+   `.clock(() -> Date.from(clock.instant()))`. Found only because F-2.3 forced the tests.
+2. **A token with a non-UUID subject crashed the filter.** Stage 1's fix for F-1.3 made
+   `UserId.fromString` raise `InvariantViolation`, which the filter did not catch — so a
+   malformed token would have produced **500 Internal Server Error** instead of being read
+   as "I do not know who you are". The catch is now `JwtException | DomainException`.
+   This is a regression that Stage 1 introduced and Stage 1's review did not catch; it
+   surfaced two stages later because a reviewer insisted on tests for an untested class.
+
+## Verification run (round 2)
+
+```
+PIPELINECRM_TEST_DB_URL=… mvn -f backend/pom.xml verify   → BUILD SUCCESS, all six modules
+  domain:              100% line, 100% branch, 124/124 mutants, worst CRAP 5.00
+  adapter-persistence:  6 tests
+  adapter-web:         23 tests
+  bootstrap:           17 tests (12 architecture + 5 wiring)
+mvn -pl bootstrap test -Dtest=AnalysedCodeTest              → BUILD FAILURE, as designed
+```

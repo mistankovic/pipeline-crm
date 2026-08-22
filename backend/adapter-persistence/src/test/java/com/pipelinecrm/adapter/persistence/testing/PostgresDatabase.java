@@ -2,6 +2,8 @@ package com.pipelinecrm.adapter.persistence.testing;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 
+import java.util.function.UnaryOperator;
+
 /**
  * The PostgreSQL instance the integration tests run against.
  *
@@ -18,18 +20,30 @@ public sealed interface PostgresDatabase permits ProvidedPostgres, Containerised
     String USER_VARIABLE = "PIPELINECRM_TEST_DB_USER";
     String PASSWORD_VARIABLE = "PIPELINECRM_TEST_DB_PASSWORD";
 
+    String DEFAULT_CREDENTIAL = "pipelinecrm";
+
     static PostgresDatabase resolve() {
-        String url = System.getenv(URL_VARIABLE);
-        if (url == null || url.isBlank()) {
-            return ContainerisedPostgres.started();
-        }
-        return new ProvidedPostgres(url, environment(USER_VARIABLE, "pipelinecrm"),
-                environment(PASSWORD_VARIABLE, "pipelinecrm"));
+        PostgresDatabase provided = chooseFrom(System::getenv);
+        return provided == null ? ContainerisedPostgres.started() : provided;
     }
 
-    private static String environment(String name, String fallback) {
-        String value = System.getenv(name);
-        return value == null || value.isBlank() ? fallback : value;
+    /**
+     * The selection itself, over a lookup rather than over the real environment, so that it
+     * can be tested. Returns null when nothing was provided and a container is called for;
+     * starting one is the caller's business, and is not something a unit test can do.
+     */
+    static PostgresDatabase chooseFrom(UnaryOperator<String> variables) {
+        String url = variables.apply(URL_VARIABLE);
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        return new ProvidedPostgres(url,
+                orDefault(variables.apply(USER_VARIABLE)),
+                orDefault(variables.apply(PASSWORD_VARIABLE)));
+    }
+
+    private static String orDefault(String value) {
+        return value == null || value.isBlank() ? DEFAULT_CREDENTIAL : value;
     }
 
     void describeTo(DynamicPropertyRegistry registry);

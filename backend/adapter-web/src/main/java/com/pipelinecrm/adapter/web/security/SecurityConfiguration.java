@@ -21,7 +21,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableConfigurationProperties(JwtSettings.class)
 public class SecurityConfiguration {
 
-    private static final String PUBLIC_SESSIONS = "/api/sessions";
+    /**
+     * The one public API route. Stage 5's sign-in controller must map exactly this path:
+     * if the two disagree, sign-in ends up protected by the token it exists to issue, and
+     * the symptom is a 401 on login that reads like a credentials bug. The constant is
+     * public so the controller can reference it rather than repeat it.
+     */
+    public static final String SIGN_IN_ROUTE = "/api/sessions";
+
     private static final String PUBLIC_HEALTH = "/actuator/health/**";
 
     @Bean
@@ -30,7 +37,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(routes -> routes
-                        .requestMatchers(PUBLIC_SESSIONS, PUBLIC_HEALTH).permitAll()
+                        .requestMatchers(SIGN_IN_ROUTE, PUBLIC_HEALTH).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwt, UsernamePasswordAuthenticationFilter.class)
                 // Without this Spring Security answers an anonymous caller with 403, which
