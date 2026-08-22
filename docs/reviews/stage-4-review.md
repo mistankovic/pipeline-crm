@@ -118,3 +118,31 @@ kind of failure, and F-4.2 undoes a security property the project deliberately b
 
 **STAGE 4 NOT APPROVED.** Fix F-4.1 through F-4.3. F-4.4 through F-4.7 may be fixed or refused
 in writing — but F-4.6 must at least become a written decision.
+
+---
+
+# Stage 4 — Adversarial Review (round 2)
+
+| Finding | Verified |
+|---------|----------|
+| F-4.1 | Yes. I re-ran my original probe and it **passed** — but that was my probe's fault, not the fix's: violating both constraints at once left Postgres free to report either, and it reported the one being asserted. So I built a proper one: violate **only** the type constraint while the test claims to check the subject rule. `Expecting throwable message … BUILD FAILURE`. The test can now tell the two rejections apart. Nine tests where there were three, including the "both subjects set" case that nothing covered. |
+| F-4.2 | Yes, and the Builder found more of it than I did. I pointed at `BcryptPasswordChecker`; the actual leak was in `SignInInteractor`, which threw before ever calling the checker, so fixing only what I named would have changed nothing measurable. Both are fixed and three tests count password comparisons at the interactor level — which is the level where the decision to skip the work was being taken. |
+| F-4.3, F-4.4, F-4.5 | Yes. |
+| F-4.6 | Yes. D-17 states the decision, the failure mode ("a lost edit, never a corrupt state, because every write still goes through the domain"), the cost of the alternative, and what would change the answer. That last part is what makes it a decision rather than an excuse. |
+| F-4.7 | **Refusal accepted.** The alternatives really are worse: an `isNew` flag would put persistence state into a type the mapper constructs. |
+| Build | `mvn clean verify`, six modules, green. 43 tests in `adapter-persistence`, all against a real PostgreSQL. 87/87 mutants in `application`. |
+
+## A note on my own probe
+
+My first re-verification of F-4.1 passed, and I nearly recorded the fix as unproven. The probe
+was wrong, not the fix. I am recording that because a reviewer who does not check their own
+instruments is as useless as a green suite that cannot fail — which is, word for word, the
+thing this review has been complaining about since Stage 3.
+
+## Verdict
+
+The domain never moved. The mappers carry the translation. The constraints are specific enough
+to be evidence. And the security property the project claimed in Stage 1 is now actually true,
+rather than true only of the error message.
+
+**STAGE 4 APPROVED**
