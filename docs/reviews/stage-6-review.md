@@ -112,3 +112,39 @@ refusals it then hides.
 
 **STAGE 6 NOT APPROVED.** Fix F-6.1, F-6.2 and F-6.3. F-6.4 and F-6.5 may be fixed or refused
 in writing.
+
+---
+
+# Stage 6 — Adversarial Review (round 2)
+
+| Finding | Verified |
+|---------|----------|
+| F-6.1 | Yes, three ways. The `Failures` class makes the mistake structurally impossible rather than fixing five copies of it. The Builder reintroduced the offending line and showed the new test going red — I asked for "a test that would have caught this" and got exactly that. And in the browser: winning a deal with no meeting now puts **"this deal cannot be won: no call or meeting has been logged against it"** on the screen. That sentence started life in `WinRequiresValueAndEngagement` and travelled through a 409 and an `ApiError` to reach a user. That is the whole chain this project is about, finally connected at the far end. |
+| F-6.2 | Yes, and fixed at the right depth. I asked for the view to carry the answer; the Builder put the question in the domain (`transitionsAllowedFor`, `mayBeChangedBy`) and then — this is the part I want on the record — **refused to give `DealViews` a caller-less overload**, because the obvious default of "the owner" was the original bug in a new costume. Making the argument mandatory forced every read to name its caller. That is a compiler doing design review. |
+| — | Confirmed in two browsers: Sam's card is `draggable="true"`, Robin's is `false`, Robin's drag does nothing, and Robin is told *"Sam Sales owns this deal. Only they or a manager may change it."* I also grepped: the browser compares no owner ids anywhere. It obeys, it does not compute. |
+| F-6.3 | Yes. I did not have to take it on trust — a tampered token puts the user back at sign-in. |
+| F-6.4, F-6.5 | Yes. |
+| Login keeping its own error state | Raised by me on re-inspection, **and the explanation is correct**: this screen has no reload to swallow anything, and a 401 here means "wrong password", not "your session ended", so the shared handler's sign-out would be answering a different question. It is now written in the file instead of being implicit. |
+
+## What this stage is actually evidence for
+
+Both defects here were invisible to `svelte-check` and to every unit test, and both were found
+by starting the real thing and using it:
+
+* `fetch` in a field → *"Illegal invocation"* → every request failed on a correct password.
+* every refusal wiped by the following reload → the user who most needed an explanation got
+  silence.
+
+Types were right. Tests were green. The application did not work. A project that has spent six
+stages building gates should be honest that no gate it owns would have caught either one — only
+a person opening the page. That is the argument for Stage 7 existing, and it should be made in
+Stage 7's own words rather than assumed.
+
+## Verdict
+
+No business rule in the browser, and a test that actively defends that boundary. The one place
+the frontend was making a judgement it had no right to make — who may move a card — is now the
+domain's answer, carried outward, with the type system enforcing that every reader asks the
+question properly.
+
+**STAGE 6 APPROVED**

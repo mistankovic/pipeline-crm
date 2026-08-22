@@ -2,6 +2,14 @@
   import ErrorBanner from '../components/ErrorBanner.svelte';
   import { session } from '../lib/session.svelte';
 
+  /**
+   * The one screen that keeps its own error state, on purpose.
+   *
+   * `Failures` exists because every other screen reloads after an action and used to wipe the
+   * refusal doing it. This screen has nothing to reload. And a 401 here means "wrong password",
+   * not "your session ended", so `Failures`' sign-out-on-401 would be answering a different
+   * question. Two reasons, both about meaning rather than convenience.
+   */
   let email = $state('sam@pipelinecrm.demo');
   let password = $state('');
   let failure = $state<unknown>(null);
