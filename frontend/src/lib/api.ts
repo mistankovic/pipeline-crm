@@ -79,12 +79,20 @@ export class Api {
     return this.send('POST', '/api/companies', { name });
   }
 
+  renameCompany(id: string, name: string): Promise<CompanyView> {
+    return this.send('PATCH', `/api/companies/${id}`, { name });
+  }
+
   contacts(companyId?: string): Promise<ContactView[]> {
     return this.send('GET', companyId ? `/api/contacts?companyId=${companyId}` : '/api/contacts');
   }
 
   createContact(companyId: string, name: string, email: string): Promise<ContactView> {
     return this.send('POST', '/api/contacts', { companyId, name, email });
+  }
+
+  correctContact(id: string, name: string, email: string): Promise<ContactView> {
+    return this.send('PATCH', `/api/contacts/${id}`, { name, email });
   }
 
   contactTimeline(contactId: string): Promise<ActivityView[]> {

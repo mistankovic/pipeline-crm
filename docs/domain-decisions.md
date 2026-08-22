@@ -175,3 +175,63 @@ solve, and the absence of the configuration is what keeps it that way.
 **What would change the decision:** the frontend being served from a different host to the API
 — at which point the allowed origins are a real, named list, and they go in configuration
 rather than in code.
+
+## D-20 — The timeline is append-only; an activity is never edited or deleted
+
+Raised by the Stage 8 review, finding F-8.8. There is no use case to change or remove an
+activity, and that is deliberate rather than unfinished.
+
+An activity records that something **happened**: a call was made, a meeting took place, a note
+was written at a moment by a person. The deal's timeline is what later justifies closing it —
+the rule that a deal cannot be won without a logged Call or Meeting is only worth anything if
+the evidence cannot be edited afterwards to suit the conclusion. A timeline you can rewrite is
+not evidence, it is a story.
+
+**Decided: activities are immutable and permanent.** A mistake is corrected by logging another
+activity that says so, which is also what an audit trail would require if this demo had one.
+
+**What would change the decision:** a requirement to redact personal data on request, which is
+a deletion with a legal shape and belongs nowhere near a general edit feature.
+
+## D-21 — A contact can be corrected but not moved between companies
+
+Raised by the Stage 8 review, finding F-8.6, when company and contact editing was added.
+
+Correcting a contact changes their name and email address. It cannot change their employer,
+and `CorrectContact.Corrections` has no field for one — sending `companyId` in the request body
+does nothing, and there is an API test that proves it.
+
+Two different things wear the same word "edit". Fixing a misspelt name is a correction: the
+record was always meant to say this. Moving a person to another company is an event in the
+world, and it raises questions this demo has not answered — do the activities logged against
+them at the old company follow them? Are the old company's deals still relevant to them? A
+single form field that silently reassigns a person is the wrong way to answer any of that.
+
+Renaming a **company** is by contrast unambiguous: the identity is kept, so every deal and
+contact that pointed at it still does. That is asserted in the acceptance scenarios and in a
+persistence test that checks a rename leaves no second row behind.
+
+**What would change the decision:** a stated requirement for people changing employer, at which
+point it is its own use case with its own name, its own rules about what follows the person,
+and its own scenarios.
+
+## D-22 — Companies and contacts are shared reference data; any signed-in user may correct them
+
+Raised by the Stage 8 round-2 review. D-14 says every change to a **deal** is subject to the
+owner-or-manager rule, and a reader who meets `RenameCompany` next will reasonably ask why the
+same rule does not apply there.
+
+It does not apply because there is nothing for it to key on. A deal has an owner and counts
+towards that person's forecast; protecting it protects a number somebody is measured on. A
+company has no owner. It is reference data that everyone's deals point at, and the same is true
+of a contact. There is no rival whose figure a rename moves.
+
+**Decided: correcting a company or a contact requires a session and nothing more.** Both
+endpoints reject an anonymous request with 401, verified in the API tests; beyond that, any
+signed-in user may fix a misspelt name. Inventing an owner for a company purely so an authority
+rule had something to check would be a rule protecting nothing.
+
+**What would change the decision:** companies acquiring an owner or an account manager, or
+per-company targets — at which point a rename is a change to somebody's territory and the
+domain would need a rule about it. Deleting a company would change it immediately and for a
+different reason, which is one of several reasons deletion is not implemented.

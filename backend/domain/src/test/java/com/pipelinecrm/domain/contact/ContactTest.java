@@ -54,4 +54,36 @@ class ContactTest {
         assertThatThrownBy(() -> new Contact(AN_ID, ACME, "Cara", null))
                 .isInstanceOf(InvariantViolation.class);
     }
+
+    @Test
+    void keeps_its_identity_and_employer_when_corrected() {
+        Contact corrected = new Contact(AN_ID, ACME, "Cara", AN_EMAIL)
+                .correctedTo("Cara Nguyen", EmailAddress.of("cara.nguyen@acme.test"));
+
+        assertThat(corrected.id()).isEqualTo(AN_ID);
+        assertThat(corrected.worksFor(ACME)).isTrue();
+        assertThat(corrected.name()).isEqualTo("Cara Nguyen");
+        assertThat(corrected.email()).isEqualTo(EmailAddress.of("cara.nguyen@acme.test"));
+    }
+
+    @Test
+    void applies_the_same_rules_when_corrected() {
+        Contact cara = new Contact(AN_ID, ACME, "Cara", AN_EMAIL);
+
+        assertThat(cara.correctedTo("  Cara Nguyen  ", AN_EMAIL).name()).isEqualTo("Cara Nguyen");
+        assertThatThrownBy(() -> cara.correctedTo(" ", AN_EMAIL))
+                .isInstanceOf(InvariantViolation.class);
+        assertThatThrownBy(() -> cara.correctedTo("Cara Nguyen", null))
+                .isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
+    void leaves_the_original_alone_when_corrected() {
+        Contact cara = new Contact(AN_ID, ACME, "Cara", AN_EMAIL);
+
+        cara.correctedTo("Cara Nguyen", EmailAddress.of("cara.nguyen@acme.test"));
+
+        assertThat(cara.name()).isEqualTo("Cara");
+        assertThat(cara.email()).isEqualTo(AN_EMAIL);
+    }
 }

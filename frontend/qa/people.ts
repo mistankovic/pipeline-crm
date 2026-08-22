@@ -71,3 +71,26 @@ export async function open(page: Page, title: string): Promise<void> {
   await cardFor(page, title).click();
   await expect(page.getByTestId('deal-title')).toHaveText(title);
 }
+
+/** The list row containing this text, so an action applies to the row a person would click. */
+export function rowFor(page: Page, list: string, text: string) {
+  return page.locator(`[data-testid="${list}"] li`).filter({ hasText: text }).first();
+}
+
+/** Renames a company from the directory and waits for the list to show it. */
+export async function renameCompany(page: Page, from: string, to: string): Promise<void> {
+  await rowFor(page, 'company-list', from).getByTestId('rename-company').click();
+  await page.getByTestId('company-new-name').fill(to);
+  await page.getByTestId('save-company').click();
+  await expect(page.getByTestId('company-list')).toContainText(to);
+}
+
+/** Adds a contact at a company and returns their name. */
+export async function addContact(page: Page, company: string, name: string): Promise<string> {
+  await page.getByTestId('contact-company').selectOption({ label: company });
+  await page.getByTestId('contact-name').fill(name);
+  await page.getByTestId('contact-email').fill(`c${Date.now()}@example.com`);
+  await page.getByTestId('add-contact').click();
+  await expect(page.getByTestId('contact-list')).toContainText(name);
+  return name;
+}

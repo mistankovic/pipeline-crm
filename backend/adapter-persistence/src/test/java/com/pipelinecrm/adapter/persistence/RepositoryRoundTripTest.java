@@ -234,6 +234,51 @@ class RepositoryRoundTripTest extends PostgresBackedTest {
                 .extracting(Activity::summary).containsExactly("first", "second");
     }
 
+    @Test
+    void saving_a_renamed_company_overwrites_the_stored_one() {
+        Company company = aCompany();
+
+        companies.save(company.renamedTo("Acme Holdings"));
+
+        assertThat(companies.findById(company.id())).contains(
+                new Company(company.id(), "Acme Holdings"));
+    }
+
+    @Test
+    void renaming_a_company_does_not_leave_a_second_row_behind() {
+        Company company = aCompany();
+        int before = companies.findAll().size();
+
+        companies.save(company.renamedTo("Acme Holdings"));
+
+        assertThat(companies.findAll()).hasSize(before);
+    }
+
+    @Test
+    void saving_a_corrected_contact_overwrites_the_stored_one() {
+        Company company = aCompany();
+        Contact contact = new Contact(ContactId.of(UUID.randomUUID()), company.id(),
+                "Cara", EmailAddress.of("cara@acme.test"));
+        contacts.save(contact);
+
+        contacts.save(contact.correctedTo("Cara Nguyen", EmailAddress.of("cara.nguyen@acme.test")));
+
+        assertThat(contacts.findById(contact.id())).contains(new Contact(contact.id(),
+                company.id(), "Cara Nguyen", EmailAddress.of("cara.nguyen@acme.test")));
+    }
+
+    @Test
+    void correcting_a_contact_does_not_leave_a_second_row_behind() {
+        Company company = aCompany();
+        Contact contact = new Contact(ContactId.of(UUID.randomUUID()), company.id(),
+                "Cara", EmailAddress.of("cara@acme.test"));
+        contacts.save(contact);
+
+        contacts.save(contact.correctedTo("Cara Nguyen", EmailAddress.of("cara.nguyen@acme.test")));
+
+        assertThat(contacts.findByCompany(company.id())).hasSize(1);
+    }
+
     private Activity activityAt(Deal deal, String summary, Instant when) {
         return new Activity(ActivityId.of(UUID.randomUUID()), new DealSubject(deal.id()),
                 ActivityType.NOTE, summary, new ActivityAuthorship(SAM, when));

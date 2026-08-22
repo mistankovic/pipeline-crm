@@ -163,5 +163,10 @@ limit, real money arithmetic across currencies (a deal's value is stored with it
 currency and forecasts are grouped per currency; no FX conversion), and horizontal
 scaling concerns.
 
-**JWT in this demo is deliberately simple** (HS256, single shared secret, 8 h expiry, no
-refresh). This is documented as a demo limitation, not presented as production security.
+**JWT in this demo is deliberately simple**: one symmetric HMAC-SHA secret, an 8 h expiry, no
+refresh, no revocation. The signing strength is not fixed here on purpose — `Keys.hmacShaKeyFor`
+derives it from the secret's length, and the rule is that the secret must be at least 32
+characters (`JwtSettings` refuses to start otherwise). Both documented ways to run the demo use
+the same 48-character secret, which is HS384; stating a single algorithm here is how this
+sentence was wrong until Stage 8 (finding F-8.7). This is a demo limitation, not production
+security.

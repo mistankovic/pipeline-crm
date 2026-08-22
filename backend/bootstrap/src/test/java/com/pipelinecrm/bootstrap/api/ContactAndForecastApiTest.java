@@ -4,8 +4,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.UUID;
+
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,6 +45,80 @@ class ContactAndForecastApiTest extends ApiTest {
     void a_company_with_no_name_is_400() throws Exception {
         http.perform(as(post("/api/companies"), sam()).content("""
                         {"name": "  "}""")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void a_company_is_renamed() throws Exception {
+        http.perform(as(patch("/api/companies/" + acme), sam()).content("""
+                        {"name": "Acme Holdings"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(acme))
+                .andExpect(jsonPath("$.name").value("Acme Holdings"));
+
+        http.perform(as(get("/api/companies"), sam()))
+                .andExpect(jsonPath("$[*].name", hasItem("Acme Holdings")));
+    }
+
+    @Test
+    void renaming_a_company_to_blank_is_400() throws Exception {
+        http.perform(as(patch("/api/companies/" + acme), sam()).content("""
+                        {"name": "  "}""")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void renaming_a_company_that_does_not_exist_is_404() throws Exception {
+        http.perform(as(patch("/api/companies/" + UUID.randomUUID()), sam()).content("""
+                        {"name": "Anything"}""")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void a_contact_is_corrected() throws Exception {
+        String cara = createContact("Cara Client", "cara@acme.test");
+
+        http.perform(as(patch("/api/contacts/" + cara), sam()).content("""
+                        {"name": "Cara Nguyen", "email": "cara.nguyen@acme.test"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(cara))
+                .andExpect(jsonPath("$.name").value("Cara Nguyen"))
+                .andExpect(jsonPath("$.email").value("cara.nguyen@acme.test"));
+
+        http.perform(as(get("/api/contacts?companyId=" + acme), sam()))
+                .andExpect(jsonPath("$[*].name", hasItem("Cara Nguyen")));
+    }
+
+    @Test
+    void correcting_a_contact_to_an_invalid_email_is_400() throws Exception {
+        String cara = createContact("Cara Client", "cara@acme.test");
+
+        http.perform(as(patch("/api/contacts/" + cara), sam()).content("""
+                        {"name": "Cara Nguyen", "email": "not-an-email"}"""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void correcting_a_contact_that_does_not_exist_is_404() throws Exception {
+        http.perform(as(patch("/api/contacts/" + UUID.randomUUID()), sam()).content("""
+                        {"name": "Nobody", "email": "nobody@acme.test"}"""))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void a_contact_cannot_be_moved_to_another_company_through_a_correction() throws Exception {
+        String cara = createContact("Cara Client", "cara@acme.test");
+        MvcResult other = http.perform(as(post("/api/companies"), sam()).content("""
+                {"name": "Globex"}""")).andReturn();
+        String globex = read(other).get("id").asText();
+
+        // companyId is not part of the request body, so sending one must change nothing.
+        http.perform(as(patch("/api/contacts/" + cara), sam()).content("""
+                        {"name": "Cara Nguyen", "email": "cara@acme.test", "companyId": "%s"}"""
+                        .formatted(globex)))
+                .andExpect(status().isOk());
+
+        http.perform(as(get("/api/contacts?companyId=" + globex), sam()))
+                .andExpect(jsonPath("$.length()").value(0));
+        http.perform(as(get("/api/contacts?companyId=" + acme), sam()))
+                .andExpect(jsonPath("$[*].name", hasItem("Cara Nguyen")));
     }
 
     @Test

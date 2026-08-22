@@ -1,5 +1,6 @@
 package com.pipelinecrm.adapter.web.rest;
 
+import com.pipelinecrm.application.port.in.CorrectContact;
 import com.pipelinecrm.application.port.in.CreateContact;
 import com.pipelinecrm.application.port.in.ListContacts;
 import com.pipelinecrm.application.port.in.ViewContactTimeline;
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,11 +34,14 @@ public class ContactController {
 
     private final ListContacts listing;
     private final CreateContact creation;
+    private final CorrectContact correction;
     private final ViewContactTimeline timeline;
 
-    public ContactController(ListContacts listing, CreateContact creation, ViewContactTimeline timeline) {
+    public ContactController(ListContacts listing, CreateContact creation,
+                             CorrectContact correction, ViewContactTimeline timeline) {
         this.listing = listing;
         this.creation = creation;
+        this.correction = correction;
         this.timeline = timeline;
     }
 
@@ -50,6 +55,22 @@ public class ContactController {
     public ContactView create(@Valid @RequestBody NewContactRequest request) {
         return creation.handle(new CreateContact.NewContact(
                 request.companyId(), request.name(), request.email()));
+    }
+
+    @PatchMapping("/{id}")
+    public ContactView correct(@PathVariable("id") UUID contactId,
+                               @Valid @RequestBody CorrectContactRequest request) {
+        return correction.handle(new CorrectContact.Corrections(
+                contactId, request.name(), request.email()));
+    }
+
+    /**
+     * What a caller sends to correct a contact. The company is absent on purpose: a contact
+     * cannot be moved between companies. Same reasoning about {@code @Email} as above.
+     */
+    public record CorrectContactRequest(
+            @NotBlank @Size(max = LONGEST_NAME) String name,
+            @NotBlank String email) {
     }
 
     @GetMapping("/{id}/activities")

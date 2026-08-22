@@ -10,4 +10,12 @@ public record Company(CompanyId id, String name) {
         Guard.present(id, "company id");
         name = Guard.filled(name, "company name");
     }
+
+    /**
+     * The same company under a new name. Renaming is not creating: the identity is kept, so
+     * every deal and contact already pointing here keeps pointing here.
+     */
+    public Company renamedTo(String newName) {
+        return new Company(id, newName);
+    }
 }

@@ -95,4 +95,9 @@ public class RefusalSteps {
     public void requestRejectedAsInvalidEmail() {
         world.expectRefusal(InvariantViolation.class, "not an email address");
     }
+
+    @Then("the request is rejected because the name is blank")
+    public void requestRejectedAsBlankName() {
+        world.expectRefusal(InvariantViolation.class, "must not be blank");
+    }
 }

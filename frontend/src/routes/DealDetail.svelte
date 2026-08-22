@@ -54,7 +54,7 @@
     <header class="card head">
       <div>
         <h1 data-testid="deal-title">{detail.deal.title}</h1>
-        <p class="muted">{detail.deal.company.name} · owned by {detail.deal.owner.name}</p>
+        <p class="muted"><span data-testid="deal-company-name">{detail.deal.company.name}</span> · owned by {detail.deal.owner.name}</p>
       </div>
       <div class="figures">
         <p><strong data-testid="deal-value">{money(detail.deal.value)}</strong></p>

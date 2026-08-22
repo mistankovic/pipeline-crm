@@ -15,6 +15,14 @@
   let contactEmail = $state('');
   let contactCompany = $state('');
 
+  // Which row is being edited, and the values being typed into it. One row at a time: an
+  // edit form per row that is all live at once is a lot of state for very little.
+  let editingCompany = $state<string | null>(null);
+  let editedCompanyName = $state('');
+  let editingContact = $state<string | null>(null);
+  let editedContactName = $state('');
+  let editedContactEmail = $state('');
+
   let openContact = $state<string | null>(null);
   let timeline = $state<ActivityView[]>([]);
   let note = $state('');
@@ -41,6 +49,35 @@
       await session.api.createContact(contactCompany, contactName, contactEmail);
       contactName = '';
       contactEmail = '';
+    });
+  };
+
+  function startRenamingCompany(company: CompanyView) {
+    editingCompany = company.id;
+    editedCompanyName = company.name;
+  }
+
+  const saveCompanyName = (event: Event) => {
+    event.preventDefault();
+    const id = editingCompany!;
+    return attempt(async () => {
+      await session.api.renameCompany(id, editedCompanyName);
+      editingCompany = null;
+    });
+  };
+
+  function startCorrectingContact(contact: ContactView) {
+    editingContact = contact.id;
+    editedContactName = contact.name;
+    editedContactEmail = contact.email;
+  }
+
+  const saveContact = (event: Event) => {
+    event.preventDefault();
+    const id = editingContact!;
+    return attempt(async () => {
+      await session.api.correctContact(id, editedContactName, editedContactEmail);
+      editingContact = null;
     });
   };
 
@@ -80,7 +117,19 @@
       </form>
       <ul data-testid="company-list">
         {#each companies as company (company.id)}
-          <li>{company.name}</li>
+          <li>
+            {#if editingCompany === company.id}
+              <form onsubmit={saveCompanyName} class="inline grow">
+                <input bind:value={editedCompanyName} required data-testid="company-new-name" />
+                <button class="primary" type="submit" data-testid="save-company">Save</button>
+                <button type="button" onclick={() => (editingCompany = null)}>Cancel</button>
+              </form>
+            {:else}
+              <span data-testid="company-row-name">{company.name}</span>
+              <button class="link" onclick={() => startRenamingCompany(company)}
+                      data-testid="rename-company">Rename</button>
+            {/if}
+          </li>
         {/each}
       </ul>
     </div>
@@ -111,10 +160,23 @@
       <ul data-testid="contact-list">
         {#each contacts as contact (contact.id)}
           <li>
-            <button class="link" onclick={() => show(contact.id)} data-testid="open-contact">
-              {contact.name}
-            </button>
-            <span class="muted">{contact.email}</span>
+            {#if editingContact === contact.id}
+              <form onsubmit={saveContact} class="stack grow">
+                <input bind:value={editedContactName} required data-testid="contact-new-name" />
+                <input bind:value={editedContactEmail} required data-testid="contact-new-email" />
+                <div class="inline">
+                  <button class="primary" type="submit" data-testid="save-contact">Save</button>
+                  <button type="button" onclick={() => (editingContact = null)}>Cancel</button>
+                </div>
+              </form>
+            {:else}
+              <button class="link" onclick={() => show(contact.id)} data-testid="open-contact">
+                {contact.name}
+              </button>
+              <span class="muted">{contact.email}</span>
+              <button class="link" onclick={() => startCorrectingContact(contact)}
+                      data-testid="edit-contact">Edit</button>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -141,5 +203,6 @@
   .inline { display: flex; gap: 0.4rem; }
   .stack { display: grid; gap: 0.4rem; }
   .spaced { margin-top: 0.75rem; }
+  .grow { flex: 1; }
   .link { border: none; background: none; padding: 0; color: var(--accent); cursor: pointer; text-align: left; }
 </style>

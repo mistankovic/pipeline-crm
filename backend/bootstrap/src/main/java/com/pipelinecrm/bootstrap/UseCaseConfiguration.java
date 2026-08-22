@@ -1,8 +1,10 @@
 package com.pipelinecrm.bootstrap;
 
 import com.pipelinecrm.application.port.in.ChangeDealStage;
+import com.pipelinecrm.application.port.in.CorrectContact;
 import com.pipelinecrm.application.port.in.CreateCompany;
 import com.pipelinecrm.application.port.in.CreateContact;
+import com.pipelinecrm.application.port.in.RenameCompany;
 import com.pipelinecrm.application.port.in.CreateDeal;
 import com.pipelinecrm.application.port.in.ListCompanies;
 import com.pipelinecrm.application.port.in.ListContacts;
@@ -26,8 +28,10 @@ import com.pipelinecrm.application.port.out.Transactions;
 import com.pipelinecrm.application.port.out.UserRepository;
 import com.pipelinecrm.application.usecase.ActivitySubjects;
 import com.pipelinecrm.application.usecase.ChangeDealStageInteractor;
+import com.pipelinecrm.application.usecase.CorrectContactInteractor;
 import com.pipelinecrm.application.usecase.CreateCompanyInteractor;
 import com.pipelinecrm.application.usecase.CreateContactInteractor;
+import com.pipelinecrm.application.usecase.RenameCompanyInteractor;
 import com.pipelinecrm.application.usecase.CreateDealInteractor;
 import com.pipelinecrm.application.usecase.DealHistory;
 import com.pipelinecrm.application.usecase.DealMutations;
@@ -118,6 +122,11 @@ public class UseCaseConfiguration {
     }
 
     @Bean
+    public RenameCompany renameCompany(CompanyRepository companies, Parties parties, WritingPorts writing) {
+        return new RenameCompanyInteractor(companies, parties, writing);
+    }
+
+    @Bean
     public ListContacts listContacts(ContactRepository contacts) {
         return new ListContactsInteractor(contacts);
     }
@@ -125,6 +134,11 @@ public class UseCaseConfiguration {
     @Bean
     public CreateContact createContact(ContactRepository contacts, Parties parties, WritingPorts writing) {
         return new CreateContactInteractor(contacts, parties, writing);
+    }
+
+    @Bean
+    public CorrectContact correctContact(ContactRepository contacts, WritingPorts writing) {
+        return new CorrectContactInteractor(contacts, writing);
     }
 
     @Bean

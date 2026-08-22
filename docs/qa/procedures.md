@@ -52,6 +52,12 @@ quietly, so silence is a failure condition here, not a neutral outcome.
 | 2.3 | Add a contact at that company, then set **Filter by company** to it. | The contact is listed, and only contacts at that company are listed. |
 | 2.4 | Add a contact whose email is `not-an-address`. | A red banner containing **"not an email address"** — the domain's own words, not a framework's. |
 | 2.5 | Click a contact's name, type a note, press **Log note**. | The note appears on the contact's timeline, attributed to Sam Sales with a timestamp. |
+| 2.6 | Press **Rename** beside a company, change the name, press **Save**. | The list shows the new name and no longer shows the old one. Reload the page and open **Companies** again (a reload returns you to the board): still the new name. |
+| 2.7 | Create a deal at that company, then rename the company again. Open the deal. | The deal shows the **new** company name. Renaming corrects a company; it does not create a second one and orphan what pointed at the first. |
+| 2.8 | Press **Rename**, clear the field to spaces, press **Save**, then press **Cancel**. | A red banner. After cancelling, the row still shows the old name — not a blank row. |
+| 2.9 | Press **Edit** beside a contact, change both name and email, press **Save**. | The row shows both new values. Reload and open **Companies** again: still there. |
+| 2.10 | Press **Edit** on a contact and set the email to `not-an-address`. | A red banner containing **"not an email address"**, and the contact unchanged. The same rule as 2.4, because it is the same rule — the domain's, not the form's. |
+| 2.11 | Correct a contact's name, then set **Filter by company** to their company. | They are still listed under the same company. Correcting a name must not move a person between companies. |
 
 ## QA-3 — The pipeline board
 

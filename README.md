@@ -23,6 +23,11 @@ where they are tested without a database, a browser or a web server:
 * The **forecast** sums `value × probability` over open deals only, grouped by owner or by
   stage, and never adds two currencies together.
 
+Companies and contacts can be corrected after the fact: a company can be renamed without
+becoming a second company, and a contact's name and email can be fixed. What a contact cannot
+do is change employer, and activities cannot be edited at all — both deliberate, recorded as
+D-20 and D-21 in `docs/domain-decisions.md`.
+
 The UI knows none of this. It draws what the API tells it, including which moves are legal for
 the person looking — see `youMayChangeThis` and `allowedTransitions` on the deal view.
 
@@ -138,7 +143,7 @@ ever run, because images could not be pulled here. The CRAP gate shells out to `
 # unit tests of the two inner layers
 mvn -f backend/pom.xml test -pl domain,application -am
 
-# the Gherkin acceptance suite alone (72 scenarios, through the input ports)
+# the Gherkin acceptance suite alone (83 scenarios, through the input ports)
 mvn -f backend/pom.xml test -pl application -am \
     -Dtest=AcceptanceTest -Dsurefire.failIfNoSpecifiedTests=false
 
@@ -166,7 +171,7 @@ npm run test:unit   # vitest
 
 ### The QA procedures
 
-`docs/qa/procedures.md` holds 34 numbered procedures written to be followed **by a person with
+`docs/qa/procedures.md` holds 40 numbered procedures written to be followed **by a person with
 a browser and no access to the code**. Each one is also scripted, one Playwright test per
 numbered step. Where the two disagree, the document is the specification.
 
@@ -195,8 +200,8 @@ recorded in CONSTITUTION.md §3.
 
 | Module | Line | Branch | Method | Class | Mutation score |
 |--------|------|--------|--------|-------|----------------|
-| `domain` | **100.00 %** (303/303) | **100.00 %** (69/69) | 100.00 % (129/129) | 100.00 % (42/42) | **100.00 %** — 124/124 killed |
-| `application` | **100.00 %** (277/277) | **100.00 %** (16/16) | 100.00 % (127/127) | 100.00 % (55/55) | **100.00 %** — 88/88 killed |
+| `domain` | **100.00 %** (305/305) | **100.00 %** (69/69) | 100.00 % (131/131) | 100.00 % (42/42) | **100.00 %** — 126/126 killed |
+| `application` | **100.00 %** (297/297) | **100.00 %** (16/16) | 100.00 % (136/136) | 100.00 % (58/58) | **100.00 %** — 96/96 killed |
 
 **Zero surviving mutants.** The gates require 95 % coverage and a 90 % mutation score; the
 survivors that existed along the way, and what each one exposed, are recorded in
@@ -206,8 +211,8 @@ survivors that existed along the way, and what each one exposed, are recorded in
 
 | Module | Methods | Worst CRAP | Worst method |
 |--------|---------|-----------|--------------|
-| `domain` | 129 | **4.00** | `Deal.requireWinIsEarned` |
-| `application` | 127 | **2.00** | `ActivityViews.dealIn` |
+| `domain` | 131 | **4.00** | `Deal.requireWinIsEarned` |
+| `application` | 136 | **2.00** | `ActivityViews.dealIn` |
 
 The Constitution's limit is 6 and its preference is 4. Every method in both layers is at or
 under 4, so the preference is met, not merely the limit.
@@ -216,16 +221,16 @@ under 4, so the preference is met, not merely the limit.
 
 | Suite | Count | What it proves |
 |-------|-------|----------------|
-| `domain` unit | 267 | The business rules, with no framework in sight |
-| `application` unit + Gherkin | 151 (of which **72 Gherkin scenarios** across 9 feature files) | The use cases, driven through their input ports |
-| `adapter-persistence` integration | 43 | Mapping and constraints against a real PostgreSQL |
+| `domain` unit | 273 | The business rules, with no framework in sight |
+| `application` unit + Gherkin | 171 (of which **83 Gherkin scenarios** across 10 feature files) | The use cases, driven through their input ports |
+| `adapter-persistence` integration | 47 | Mapping, updates and constraints against a real PostgreSQL |
 | `adapter-web` unit | 28 | HTTP translation, JWT handling, error shape |
-| `bootstrap` architecture + API | 74 (13 ArchUnit rules) | The dependency rule, the wiring, and the API over real HTTP |
+| `bootstrap` architecture + API | 81 (13 ArchUnit rules) | The dependency rule, the wiring, and the API over real HTTP |
 | frontend unit | 26 | The client's own logic, in isolation |
-| QA procedures | **34 / 34 passing** | The application as a person meets it |
-| **Total automated** | **563 backend + 26 frontend + 34 QA** | |
+| QA procedures | **40 / 40 passing** | The application as a person meets it |
+| **Total automated** | **600 backend + 26 frontend + 40 QA** | |
 
-The most recent recorded QA run is `docs/qa/runs/2026-08-22-stage-8.md`.
+The most recent recorded QA run is `docs/qa/runs/2026-08-22-stage-8-round-2.md`.
 
 ### Gates that fail the build
 
@@ -247,8 +252,8 @@ None of them can be waived without an amendment recorded in `docs/reviews/`.
 
 Complete. Stages 0–8, each gated by an adversarial review recorded in `docs/reviews/`.
 
-**Fifty-nine review findings** were raised and resolved across those gates — 11, 9, 8, 7, 7, 6,
-5 and 6 at stages 0 through 7. Every one is written down with the fix that answered it,
+**Sixty-seven review findings** were raised and resolved across those gates — 11, 9, 8, 7, 7, 6,
+5, 6 and 8 at stages 0 through 8. Every one is written down with the fix that answered it,
 including the embarrassing ones: a QA suite whose setup was undocumented, two Gherkin scenarios
 that could not fail, a timing side channel that leaked which email addresses exist, and a
 catch-all error handler that turned every client mistake into a 500.

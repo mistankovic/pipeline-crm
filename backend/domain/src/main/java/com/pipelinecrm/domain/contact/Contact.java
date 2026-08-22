@@ -18,4 +18,13 @@ public record Contact(ContactId id, CompanyId company, String name, EmailAddress
     public boolean worksFor(CompanyId candidate) {
         return company.equals(candidate);
     }
+
+    /**
+     * The same person with corrected details. Who they work for is deliberately not among
+     * them: moving a contact between companies changes which deals they are relevant to, and
+     * that is a different decision from fixing a misspelt name. See decision D-21.
+     */
+    public Contact correctedTo(String newName, EmailAddress newEmail) {
+        return new Contact(id, company, newName, newEmail);
+    }
 }
