@@ -21,7 +21,18 @@
     <!-- Naming -->
     <module name="PackageName"/>
     <module name="TypeName"/>
-    <module name="MethodName"/>
+    <!--
+      Production methods are camelCase. Test methods are sentences, per CONSTITUTION.md
+      section 3.2, so underscores are how they stay readable. Two rules, one suppressed
+      on each side, rather than no rule at all.
+    -->
+    <module name="MethodName">
+      <property name="id" value="methodNameProduction"/>
+    </module>
+    <module name="MethodName">
+      <property name="id" value="methodNameTest"/>
+      <property name="format" value="^[a-z][a-zA-Z0-9]*(_[a-z0-9]+)*$"/>
+    </module>
     <module name="MemberName"/>
     <module name="ParameterName"/>
     <module name="LocalVariableName"/>

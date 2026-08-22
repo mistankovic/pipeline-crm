@@ -24,6 +24,8 @@
       HideUtilityClassConstructor - test data builders and Cucumber glue holders.
       AbbreviationAsWordInName - test names spell out domain acronyms deliberately.
   -->
+  <suppress id="methodNameProduction" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress id="methodNameTest" files="[\\/]src[\\/]main[\\/]"/>
   <suppress checks="MagicNumber" files="[\\/]src[\\/]test[\\/]"/>
   <suppress checks="VisibilityModifier" files="[\\/]src[\\/]test[\\/]"/>
   <suppress checks="HideUtilityClassConstructor" files="[\\/]src[\\/]test[\\/]"/>

@@ -1,0 +1,92 @@
+# Domain decisions
+
+Every reading of the requirements that could reasonably have gone another way is recorded
+here, with the alternative, so that a reviewer argues with a decision rather than
+discovering an accident.
+
+## D-1 — A deal may be lost from any open stage, but only won from NEGOTIATION
+
+**Requirement text:** `LEAD → QUALIFIED → PROPOSAL → NEGOTIATION → CLOSED_WON / CLOSED_LOST`.
+
+**Decision:** forward movement is one stage at a time. `CLOSED_WON` is reachable only from
+`NEGOTIATION`. `CLOSED_LOST` is reachable from **any** open stage.
+
+**Why:** the strict linear reading would mean a lead that never answers the phone has to be
+walked through three fictitious stages before it can be marked lost, which would corrupt
+every forecast in the process. Losing early is the single most common real event in a
+pipeline. Winning early is not: a win is a commercial commitment and the requirement
+attaches conditions to it, so it stays at the end.
+
+**Alternative, if the supervisor disagrees:** delete the `target == CLOSED_LOST` branch in
+`DealStage.allowsTransitionTo`. One line, and two scenarios in
+`deal_stage_transitions.feature` change from passing to rejected.
+
+## D-2 — Closed deals are terminal and immutable
+
+Nothing reopens a closed deal, and `reprice`/`reweight` are refused once closed
+(`ClosedDealIsImmutable`). The requirement is silent. A won deal whose value can still be
+edited is a reporting hole, so the domain forbids it.
+
+## D-3 — Probability is forced on close, not merely defaulted
+
+Rule 3 says a close *forces* probability to 100 or 0. The domain therefore overwrites
+whatever the caller asks for; the caller cannot pass a probability to `changeStageTo` at
+all. A closed deal's probability can never disagree with its stage.
+
+## D-4 — Engagement means a CALL or a MEETING **linked to that deal**
+
+Rule 1 says "at least one Activity of type Meeting or Call". An activity linked to a
+*contact* at the same company does not count: the rule is about this opportunity. The
+domain enforces the link by refusing to judge a deal against another deal's history
+(`InapplicableActivityHistory`) rather than trusting the caller to pass the right list.
+
+## D-5 — No currency conversion; forecasts are per currency
+
+A deal's value carries its currency. `Money.plus` across currencies throws
+`CurrencyMismatch`. A forecast therefore produces one line per (group, currency) pair.
+The alternative — a single total in a reporting currency — needs FX rates and a rate date,
+which Constitution §6 lists as a non-goal.
+
+## D-6 — `Money` cannot be negative
+
+There is no such thing as a deal worth minus ten thousand. A negative amount is an
+`InvariantViolation` at construction, so no downstream code has to consider the case.
+
+## D-7 — Zero-valued deals are legal, unwinnable deals are not
+
+A deal may be created at value 0 (nobody has quoted yet) and may move through the
+pipeline. It cannot be **won** at 0, by rule 1. This is why the value check lives in the
+win path and not in the constructor.
+
+## D-8 — `User`, `Company`, `Contact` and `Activity` are immutable records; `Deal` is not
+
+Only `Deal` changes state during its life, and its state changes are the business rules
+under test. The rest have no mutating behaviour in this feature set, so they are records
+and structural equality is correct for them. `Deal` implements identity equality on its id.
+
+## D-9 — A deal has a title
+
+Not in the requirement's field list. Added because a Kanban board of unnamed cards is
+unusable and every acceptance scenario has to refer to a deal by something. The title is
+required and trimmed; it carries no rules.
+
+## D-10 — Value and probability travel together as `DealTerms`
+
+Writing `Deal.open(id, title, parties, value, probability)` would have been five
+parameters, over the Constitution's limit of four. Rather than raise the limit, the two
+fields that always change together and are always read together became one value object
+with `weighted()`, `pricedAt()` and `weightedAt()`. The limit found a missing concept,
+which is what limits are for.
+
+## D-11 — The domain computes which transitions are legal, and says so out loud
+
+`Deal.allowedTransitions()` returns the stages this deal could move to right now, and it
+reaches the browser through `DealView.allowedTransitions`. The alternative — the browser
+knowing the state machine — would put a business rule in the frontend, which Constitution
+§2.2 forbids. The server still rejects an illegal move if a client sends one anyway, so
+the exported list is an affordance, never the enforcement.
+
+## D-12 — Sign-in failures are indistinguishable
+
+`AuthenticationFailed` carries one message for a wrong password and for an unknown
+address. A different message for each would let anyone enumerate the user list.
