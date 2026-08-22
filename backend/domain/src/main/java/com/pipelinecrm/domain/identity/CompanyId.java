@@ -1,6 +1,7 @@
 package com.pipelinecrm.domain.identity;
 
 import com.pipelinecrm.domain.shared.Guard;
+
 import java.util.UUID;
 
 /** Identity of a company. */
@@ -15,6 +16,6 @@ public record CompanyId(UUID value) implements Identifier {
     }
 
     public static CompanyId fromString(String value) {
-        return new CompanyId(UUID.fromString(Guard.filled(value, "company id")));
+        return new CompanyId(Identifiers.parse(value, "company id"));
     }
 }

@@ -23,20 +23,3 @@ Feature: Closing a deal settles its probability
     Given Sam owns a deal "Acme renewal" in stage LEAD worth 10000 EUR at 25% probability
     When Sam moves "Acme renewal" to QUALIFIED
     Then the deal "Acme renewal" has probability 25
-
-  Scenario: A closed deal's value can no longer be edited
-    Given Sam owns a deal "Acme renewal" in stage PROPOSAL worth 10000 EUR at 80% probability
-    And Sam moves "Acme renewal" to CLOSED_LOST
-    When Sam tries to reprice "Acme renewal" to 20000 EUR
-    Then the change is rejected because the deal is closed
-
-  Scenario: A closed deal's probability can no longer be edited
-    Given Sam owns a deal "Acme renewal" in stage PROPOSAL worth 10000 EUR at 80% probability
-    And Sam moves "Acme renewal" to CLOSED_LOST
-    When Sam tries to reweight "Acme renewal" to 90%
-    Then the change is rejected because the deal is closed
-
-  Scenario: An open deal can be repriced
-    Given Sam owns a deal "Acme renewal" in stage PROPOSAL worth 10000 EUR at 80% probability
-    When Sam reprices "Acme renewal" to 20000 EUR
-    Then the deal "Acme renewal" is worth 20000 EUR

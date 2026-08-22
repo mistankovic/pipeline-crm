@@ -70,6 +70,8 @@ class IdentifierTest {
     @MethodSource("identifierTypes")
     void refuses_text_that_is_not_a_uuid(
             String name, Function<UUID, Identifier> fromUuid, Function<String, Identifier> fromText) {
-        assertThatThrownBy(() -> fromText.apply("not-a-uuid")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> fromText.apply("not-a-uuid"))
+                .isInstanceOf(InvariantViolation.class)
+                .hasMessageContaining("not a valid identifier");
     }
 }

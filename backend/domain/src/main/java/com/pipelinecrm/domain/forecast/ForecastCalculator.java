@@ -27,7 +27,7 @@ public final class ForecastCalculator {
     }
 
     private GroupKey keyOf(Deal deal, ForecastDimension dimension) {
-        return new GroupKey(dimension.keyOf(deal), deal.value().currency());
+        return new GroupKey(dimension.groupOf(deal), deal.value().currency());
     }
 
     private void add(Map<GroupKey, Money> totals, GroupKey key, Money weighted) {
@@ -40,6 +40,6 @@ public final class ForecastCalculator {
                 .toList();
     }
 
-    private record GroupKey(String group, Currency currency) {
+    private record GroupKey(ForecastGroup group, Currency currency) {
     }
 }

@@ -58,22 +58,29 @@ public final class Examples {
                 new DealTerms(Money.of(amount, "EUR"), Probability.of(50)));
     }
 
+    /**
+     * The forward path, written out. Deriving it from enum ordinals would couple every test
+     * that builds a deal to the declaration order of DealStage.
+     */
+    private static final List<DealStage> PIPELINE = List.of(
+            DealStage.LEAD, DealStage.QUALIFIED, DealStage.PROPOSAL,
+            DealStage.NEGOTIATION, DealStage.CLOSED_WON);
+
     public static Deal dealAt(DealStage stage, String amount, UserId owner) {
         Deal deal = dealWorth(amount, owner);
         User mover = salesperson(owner);
         DealActivities history = engagementFor(deal.id(), owner);
-        while (deal.stage() != stage) {
-            deal.changeStageTo(nextTowards(stage, deal.stage()), mover, history);
+        for (DealStage step : stepsTo(stage)) {
+            deal.changeStageTo(step, mover, history);
         }
         return deal;
     }
 
-    private static DealStage nextTowards(DealStage target, DealStage current) {
-        return target == DealStage.CLOSED_LOST ? DealStage.CLOSED_LOST : forwardFrom(current);
-    }
-
-    private static DealStage forwardFrom(DealStage current) {
-        return DealStage.values()[current.ordinal() + 1];
+    private static List<DealStage> stepsTo(DealStage target) {
+        if (target == DealStage.CLOSED_LOST) {
+            return List.of(DealStage.CLOSED_LOST);
+        }
+        return PIPELINE.subList(1, PIPELINE.indexOf(target) + 1);
     }
 
     public static Activity activity(ActivityType type, ActivitySubject subject, UserId author) {

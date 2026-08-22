@@ -53,12 +53,14 @@ public final class Deal {
         terms = terms.weightedAt(target.forcedProbability().orElse(terms.probability()));
     }
 
-    public void reprice(Money newValue) {
+    public void reprice(Money newValue, User actor) {
+        requireAuthority(actor);
         requireStillOpen();
         terms = terms.pricedAt(newValue);
     }
 
-    public void reweight(Probability newProbability) {
+    public void reweight(Probability newProbability, User actor) {
+        requireAuthority(actor);
         requireStillOpen();
         terms = terms.weightedAt(newProbability);
     }
@@ -100,8 +102,13 @@ public final class Deal {
         return Arrays.stream(DealStage.values()).filter(stage::allowsTransitionTo).toList();
     }
 
+    /**
+     * A deal belongs to its owner. Nobody but the owner or a manager may change anything
+     * about it: setting a rival's deal to zero value removes it from the forecast just as
+     * effectively as marking it lost.
+     */
     private void requireAuthority(User actor) {
-        Guard.present(actor, "user changing the stage");
+        Guard.present(actor, "user changing the deal");
         if (!actor.isManager() && !parties.ownedBy(actor.id())) {
             throw new StageChangeForbidden(actor.id());
         }

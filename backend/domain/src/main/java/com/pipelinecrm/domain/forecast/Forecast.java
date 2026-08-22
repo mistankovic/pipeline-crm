@@ -22,7 +22,7 @@ public record Forecast(List<ForecastLine> lines) {
         return new Forecast(List.of());
     }
 
-    public Optional<Money> valueOf(String group, Currency currency) {
+    public Optional<Money> valueOf(ForecastGroup group, Currency currency) {
         return lines.stream()
                 .filter(line -> line.group().equals(group))
                 .map(ForecastLine::weightedValue)

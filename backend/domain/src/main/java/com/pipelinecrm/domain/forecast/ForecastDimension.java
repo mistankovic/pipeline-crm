@@ -7,16 +7,16 @@ public enum ForecastDimension {
 
     OWNER {
         @Override
-        public String keyOf(Deal deal) {
-            return deal.parties().owner().value().toString();
+        public ForecastGroup groupOf(Deal deal) {
+            return new OwnerGroup(deal.parties().owner());
         }
     },
     STAGE {
         @Override
-        public String keyOf(Deal deal) {
-            return deal.stage().name();
+        public ForecastGroup groupOf(Deal deal) {
+            return new StageGroup(deal.stage());
         }
     };
 
-    public abstract String keyOf(Deal deal);
+    public abstract ForecastGroup groupOf(Deal deal);
 }

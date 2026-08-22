@@ -90,3 +90,32 @@ the exported list is an affordance, never the enforcement.
 
 `AuthenticationFailed` carries one message for a wrong password and for an unknown
 address. A different message for each would let anyone enumerate the user list.
+
+## D-13 — Users are seeded, not created through the application
+
+There is no `CreateUser` use case and `UserRepository` has no `save`. Users are provisioned
+by a database migration (Stage 4). The requirement's UI list contains no user management
+screen, and adding one would drag in password policy, invitation flow and role
+administration — all of which are noise against the point of this demo. Recorded in
+Constitution §6 as a non-goal so that a reviewer sees a decision rather than a gap.
+
+## D-14 — Every change to a deal is subject to the same authority rule
+
+Rule 2 in the requirements names only the *stage*. The domain applies the owner-or-manager
+check to `reprice` and `reweight` as well, because setting a rival's deal to zero value or
+zero probability removes it from the forecast exactly as effectively as marking it lost.
+Protecting one path and leaving the other open would be an accident, not a design.
+
+## D-15 — Repricing states its currency
+
+`RepriceDeal.Repricing` carries an explicit currency rather than inheriting the deal's
+existing one. Inheriting would be a business decision ("a deal's currency can never
+change") taken silently inside a mapper. If we later decide a deal's currency is fixed,
+that rule belongs in `Deal`, enforced and tested — not implied by an absent field.
+
+## D-16 — Ports speak the domain's types, not strings
+
+`ChangeDealStage` takes a `DealStage` and `ProduceForecast` takes a `ForecastDimension`.
+Parsing text into those enums is the web adapter's job. A use case handed a `String` would
+have to validate it, which means an HTTP concern (a badly typed request) would be decided
+one layer too deep.

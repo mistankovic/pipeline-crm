@@ -4,6 +4,10 @@ Feature: Signing in
   browser uses on later calls. A wrong password and an unknown user are answered
   identically, so that the failure does not reveal who has an account.
 
+  Users are not created through this system: they are provisioned by a database migration
+  (see docs/domain-decisions.md, decision D-13). "Given a salesperson with password" is
+  therefore a fixture describing seeded data, not a use case.
+
   Background:
     Given a salesperson "Sam" with password "correct-horse"
 

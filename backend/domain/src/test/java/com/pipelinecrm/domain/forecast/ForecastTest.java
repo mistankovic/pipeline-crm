@@ -1,10 +1,12 @@
 package com.pipelinecrm.domain.forecast;
 
+import com.pipelinecrm.domain.identity.UserId;
 import com.pipelinecrm.domain.shared.InvariantViolation;
 import com.pipelinecrm.domain.shared.Money;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.Currency;
 import java.util.List;
 
@@ -16,10 +18,14 @@ class ForecastTest {
     private static final Currency EUR = Currency.getInstance("EUR");
     private static final Currency USD = Currency.getInstance("USD");
 
+    private static final ForecastGroup SAM = new OwnerGroup(UserId.of(UUID.randomUUID()));
+    private static final ForecastGroup ROBIN = new OwnerGroup(UserId.of(UUID.randomUUID()));
+    private static final ForecastGroup NOBODY = new OwnerGroup(UserId.of(UUID.randomUUID()));
+
     private static final Forecast TWO_CURRENCIES = new Forecast(List.of(
-            new ForecastLine("sam", Money.of("100.00", "EUR")),
-            new ForecastLine("robin", Money.of("50.00", "EUR")),
-            new ForecastLine("sam", Money.of("70.00", "USD"))));
+            new ForecastLine(SAM, Money.of("100.00", "EUR")),
+            new ForecastLine(ROBIN, Money.of("50.00", "EUR")),
+            new ForecastLine(SAM, Money.of("70.00", "USD"))));
 
     @Test
     void an_empty_forecast_has_no_lines() {
@@ -33,17 +39,17 @@ class ForecastTest {
 
     @Test
     void finds_the_value_of_a_group_in_a_currency() {
-        assertThat(TWO_CURRENCIES.valueOf("sam", USD)).contains(Money.of("70.00", "USD"));
+        assertThat(TWO_CURRENCIES.valueOf(SAM, USD)).contains(Money.of("70.00", "USD"));
     }
 
     @Test
     void reports_nothing_for_a_group_it_does_not_hold() {
-        assertThat(TWO_CURRENCIES.valueOf("nobody", EUR)).isEmpty();
+        assertThat(TWO_CURRENCIES.valueOf(NOBODY, EUR)).isEmpty();
     }
 
     @Test
     void reports_nothing_for_a_currency_a_group_does_not_use() {
-        assertThat(TWO_CURRENCIES.valueOf("robin", USD)).isEmpty();
+        assertThat(TWO_CURRENCIES.valueOf(ROBIN, USD)).isEmpty();
     }
 
     @Test
@@ -59,7 +65,7 @@ class ForecastTest {
     @Test
     void copies_its_lines_so_a_caller_cannot_edit_the_result() {
         List<ForecastLine> mutable = new ArrayList<>();
-        mutable.add(new ForecastLine("sam", Money.of("1.00", "EUR")));
+        mutable.add(new ForecastLine(SAM, Money.of("1.00", "EUR")));
         Forecast forecast = new Forecast(mutable);
 
         mutable.clear();
@@ -76,11 +82,11 @@ class ForecastTest {
     void a_line_refuses_to_exist_without_a_group() {
         Money value = Money.of("1", "EUR");
 
-        assertThatThrownBy(() -> new ForecastLine(" ", value)).isInstanceOf(InvariantViolation.class);
+        assertThatThrownBy(() -> new ForecastLine(null, value)).isInstanceOf(InvariantViolation.class);
     }
 
     @Test
     void a_line_refuses_to_exist_without_a_value() {
-        assertThatThrownBy(() -> new ForecastLine("sam", null)).isInstanceOf(InvariantViolation.class);
+        assertThatThrownBy(() -> new ForecastLine(SAM, null)).isInstanceOf(InvariantViolation.class);
     }
 }

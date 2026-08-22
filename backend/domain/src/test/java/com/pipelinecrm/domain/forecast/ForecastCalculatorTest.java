@@ -49,7 +49,7 @@ class ForecastCalculatorTest {
 
         Forecast forecast = calculator.forecast(List.of(deal), ForecastDimension.OWNER);
 
-        assertThat(forecast.valueOf(sam.value().toString(), EUR)).contains(Money.of("400.00", "EUR"));
+        assertThat(forecast.valueOf(new OwnerGroup(sam), EUR)).contains(Money.of("400.00", "EUR"));
     }
 
     @Test
@@ -58,7 +58,7 @@ class ForecastCalculatorTest {
                 List.of(deal(sam, "1000.00", "EUR", 50), deal(sam, "500.00", "EUR", 20)),
                 ForecastDimension.OWNER);
 
-        assertThat(forecast.valueOf(sam.value().toString(), EUR)).contains(Money.of("600.00", "EUR"));
+        assertThat(forecast.valueOf(new OwnerGroup(sam), EUR)).contains(Money.of("600.00", "EUR"));
     }
 
     @Test
@@ -67,8 +67,8 @@ class ForecastCalculatorTest {
                 List.of(deal(sam, "1000.00", "EUR", 50), deal(robin, "1000.00", "EUR", 10)),
                 ForecastDimension.OWNER);
 
-        assertThat(forecast.valueOf(sam.value().toString(), EUR)).contains(Money.of("500.00", "EUR"));
-        assertThat(forecast.valueOf(robin.value().toString(), EUR)).contains(Money.of("100.00", "EUR"));
+        assertThat(forecast.valueOf(new OwnerGroup(sam), EUR)).contains(Money.of("500.00", "EUR"));
+        assertThat(forecast.valueOf(new OwnerGroup(robin), EUR)).contains(Money.of("100.00", "EUR"));
     }
 
     @Test
@@ -78,8 +78,8 @@ class ForecastCalculatorTest {
                 ForecastDimension.OWNER);
 
         assertThat(forecast.lines()).hasSize(2);
-        assertThat(forecast.valueOf(sam.value().toString(), EUR)).contains(Money.of("500.00", "EUR"));
-        assertThat(forecast.valueOf(sam.value().toString(), USD)).contains(Money.of("500.00", "USD"));
+        assertThat(forecast.valueOf(new OwnerGroup(sam), EUR)).contains(Money.of("500.00", "EUR"));
+        assertThat(forecast.valueOf(new OwnerGroup(sam), USD)).contains(Money.of("500.00", "USD"));
     }
 
     @Test
@@ -90,8 +90,8 @@ class ForecastCalculatorTest {
         Forecast forecast = calculator.forecast(
                 List.of(advanced, deal(robin, "200.00", "EUR", 50)), ForecastDimension.STAGE);
 
-        assertThat(forecast.valueOf("QUALIFIED", EUR)).contains(Money.of("500.00", "EUR"));
-        assertThat(forecast.valueOf("LEAD", EUR)).contains(Money.of("100.00", "EUR"));
+        assertThat(forecast.valueOf(new StageGroup(DealStage.QUALIFIED), EUR)).contains(Money.of("500.00", "EUR"));
+        assertThat(forecast.valueOf(new StageGroup(DealStage.LEAD), EUR)).contains(Money.of("100.00", "EUR"));
     }
 
     @Test
@@ -112,6 +112,16 @@ class ForecastCalculatorTest {
         Forecast forecast = calculator.forecast(List.of(lost), ForecastDimension.OWNER);
 
         assertThat(forecast.lines()).isEmpty();
+    }
+
+    @Test
+    void a_group_refuses_to_exist_without_an_owner() {
+        assertThatThrownBy(() -> new OwnerGroup(null)).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
+    void a_group_refuses_to_exist_without_a_stage() {
+        assertThatThrownBy(() -> new StageGroup(null)).isInstanceOf(InvariantViolation.class);
     }
 
     @Test

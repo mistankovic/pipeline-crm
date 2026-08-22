@@ -155,7 +155,9 @@ sources by Checkstyle exactly as on production code. The judgement-based rules b
 
 ## 6. Non-goals
 
-Explicitly out of scope, so nobody reviews us for missing them: multi-tenancy, refresh
+Explicitly out of scope, so nobody reviews us for missing them: **user provisioning**
+(users are seeded by a database migration; there is no user-management use case, see
+decision D-13), multi-tenancy, refresh
 tokens/token revocation, password reset, audit trail, i18n, pagination beyond a simple
 limit, real money arithmetic across currencies (a deal's value is stored with its
 currency and forecasts are grouped per currency; no FX conversion), and horizontal

@@ -48,6 +48,20 @@ class MoneyTest {
     }
 
     @Test
+    void rejects_an_amount_that_is_not_a_number_as_a_domain_failure() {
+        assertThatThrownBy(() -> Money.of("ten euros", "EUR"))
+                .isInstanceOf(InvariantViolation.class)
+                .hasMessageContaining("amount is not a number");
+    }
+
+    @Test
+    void rejects_an_unknown_currency_code_as_a_domain_failure() {
+        assertThatThrownBy(() -> Money.of("10", "NOTACURRENCY"))
+                .isInstanceOf(InvariantViolation.class)
+                .hasMessageContaining("unknown currency code");
+    }
+
+    @Test
     void treats_zero_as_not_positive() {
         assertThat(Money.zero(EUR).isPositive()).isFalse();
     }

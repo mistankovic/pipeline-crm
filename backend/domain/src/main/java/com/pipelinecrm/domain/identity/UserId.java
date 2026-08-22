@@ -1,6 +1,7 @@
 package com.pipelinecrm.domain.identity;
 
 import com.pipelinecrm.domain.shared.Guard;
+
 import java.util.UUID;
 
 /** Identity of a user. */
@@ -15,6 +16,6 @@ public record UserId(UUID value) implements Identifier {
     }
 
     public static UserId fromString(String value) {
-        return new UserId(UUID.fromString(Guard.filled(value, "user id")));
+        return new UserId(Identifiers.parse(value, "user id"));
     }
 }

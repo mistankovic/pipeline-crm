@@ -1,6 +1,7 @@
 package com.pipelinecrm.domain.identity;
 
 import com.pipelinecrm.domain.shared.Guard;
+
 import java.util.UUID;
 
 /** Identity of a deal. */
@@ -15,6 +16,6 @@ public record DealId(UUID value) implements Identifier {
     }
 
     public static DealId fromString(String value) {
-        return new DealId(UUID.fromString(Guard.filled(value, "deal id")));
+        return new DealId(Identifiers.parse(value, "deal id"));
     }
 }

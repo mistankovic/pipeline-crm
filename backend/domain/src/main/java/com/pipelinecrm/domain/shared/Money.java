@@ -20,9 +20,25 @@ public record Money(BigDecimal amount, Currency currency) {
     }
 
     public static Money of(String amount, String currencyCode) {
-        Guard.filled(amount, "amount");
-        Guard.filled(currencyCode, "currency code");
-        return new Money(new BigDecimal(amount), Currency.getInstance(currencyCode));
+        return new Money(parseAmount(amount), parseCurrency(currencyCode));
+    }
+
+    private static BigDecimal parseAmount(String amount) {
+        String text = Guard.filled(amount, "amount");
+        try {
+            return new BigDecimal(text);
+        } catch (NumberFormatException notANumber) {
+            throw new InvariantViolation("amount is not a number: " + text);
+        }
+    }
+
+    private static Currency parseCurrency(String currencyCode) {
+        String text = Guard.filled(currencyCode, "currency code");
+        try {
+            return Currency.getInstance(text);
+        } catch (IllegalArgumentException unknown) {
+            throw new InvariantViolation("unknown currency code: " + text);
+        }
     }
 
     public static Money zero(Currency currency) {

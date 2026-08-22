@@ -202,7 +202,7 @@ class DealTest {
         Deal deal = closedDealAt(closedStage);
         Money newValue = Money.of("2000", "EUR");
 
-        assertThatThrownBy(() -> deal.reprice(newValue))
+        assertThatThrownBy(() -> deal.reprice(newValue, owner))
                 .isInstanceOf(ClosedDealIsImmutable.class)
                 .hasMessageContaining(closedStage.name());
     }
@@ -213,14 +213,14 @@ class DealTest {
         Deal deal = closedDealAt(closedStage);
         Probability newProbability = Probability.of(70);
 
-        assertThatThrownBy(() -> deal.reweight(newProbability)).isInstanceOf(ClosedDealIsImmutable.class);
+        assertThatThrownBy(() -> deal.reweight(newProbability, owner)).isInstanceOf(ClosedDealIsImmutable.class);
     }
 
     @Test
     void an_open_deal_may_be_repriced() {
         Deal deal = Examples.dealWorth("1000", ownerId);
 
-        deal.reprice(Money.of("2500", "EUR"));
+        deal.reprice(Money.of("2500", "EUR"), owner);
 
         assertThat(deal.value()).isEqualTo(Money.of("2500", "EUR"));
     }
@@ -229,7 +229,7 @@ class DealTest {
     void an_open_deal_may_be_reweighted() {
         Deal deal = Examples.dealWorth("1000", ownerId);
 
-        deal.reweight(Probability.of(80));
+        deal.reweight(Probability.of(80), owner);
 
         assertThat(deal.probability()).isEqualTo(Probability.of(80));
     }
@@ -238,14 +238,68 @@ class DealTest {
     void repricing_to_nothing_is_not_a_price() {
         Deal deal = Examples.dealWorth("1000", ownerId);
 
-        assertThatThrownBy(() -> deal.reprice(null)).isInstanceOf(InvariantViolation.class);
+        assertThatThrownBy(() -> deal.reprice(null, owner)).isInstanceOf(InvariantViolation.class);
     }
 
     @Test
     void reweighting_to_nothing_is_not_a_probability() {
         Deal deal = Examples.dealWorth("1000", ownerId);
 
-        assertThatThrownBy(() -> deal.reweight(null)).isInstanceOf(InvariantViolation.class);
+        assertThatThrownBy(() -> deal.reweight(null, owner)).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
+    void a_stranger_may_not_reprice_somebody_elses_deal() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+        Money newValue = Money.of("0", "EUR");
+
+        assertThatThrownBy(() -> deal.reprice(newValue, stranger))
+                .isInstanceOf(StageChangeForbidden.class);
+        assertThat(deal.value()).isEqualTo(Money.of("1000", "EUR"));
+    }
+
+    @Test
+    void a_stranger_may_not_reweight_somebody_elses_deal() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+        Probability zero = Probability.impossible();
+
+        assertThatThrownBy(() -> deal.reweight(zero, stranger))
+                .isInstanceOf(StageChangeForbidden.class);
+        assertThat(deal.probability()).isEqualTo(Probability.of(50));
+    }
+
+    @Test
+    void a_manager_may_reprice_somebody_elses_deal() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+
+        deal.reprice(Money.of("2000", "EUR"), manager);
+
+        assertThat(deal.value()).isEqualTo(Money.of("2000", "EUR"));
+    }
+
+    @Test
+    void a_manager_may_reweight_somebody_elses_deal() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+
+        deal.reweight(Probability.of(10), manager);
+
+        assertThat(deal.probability()).isEqualTo(Probability.of(10));
+    }
+
+    @Test
+    void nobody_at_all_may_reprice_a_deal() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+        Money newValue = Money.of("1", "EUR");
+
+        assertThatThrownBy(() -> deal.reprice(newValue, null)).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
+    void nobody_at_all_may_reweight_a_deal() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+        Probability newProbability = Probability.of(1);
+
+        assertThatThrownBy(() -> deal.reweight(newProbability, null)).isInstanceOf(InvariantViolation.class);
     }
 
     @Test
@@ -316,7 +370,7 @@ class DealTest {
     void two_deals_with_the_same_id_are_the_same_deal() {
         Deal deal = Examples.dealWorth("1000", ownerId);
         Deal sameIdentity = Deal.from(deal.snapshot());
-        sameIdentity.reprice(Money.of("9999", "EUR"));
+        sameIdentity.reprice(Money.of("9999", "EUR"), owner);
 
         assertThat(deal).isEqualTo(sameIdentity).hasSameHashCodeAs(sameIdentity);
     }
@@ -326,7 +380,7 @@ class DealTest {
         Deal deal = Examples.dealWorth("1000", ownerId);
         int before = deal.hashCode();
 
-        deal.reprice(Money.of("9999", "EUR"));
+        deal.reprice(Money.of("9999", "EUR"), owner);
 
         assertThat(deal.hashCode()).isEqualTo(before).isEqualTo(deal.id().hashCode());
     }
