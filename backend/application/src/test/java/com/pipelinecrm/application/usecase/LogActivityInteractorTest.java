@@ -126,6 +126,6 @@ class LogActivityInteractorTest {
         application.logActivity.handle(new LogActivity.NewActivity(
                 new LogActivity.AboutContact(cara), "MEETING", "introductions", sam.id().value()));
 
-        assertThat(application.viewDeal.handle(deal).timeline()).isEmpty();
+        assertThat(application.viewDeal.handle(deal, sam.id().value()).timeline()).isEmpty();
     }
 }

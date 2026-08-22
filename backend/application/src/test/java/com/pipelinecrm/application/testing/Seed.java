@@ -35,7 +35,7 @@ public final class Seed {
 
     public DealView deal(String title, UUID company, UUID owner, String amount) {
         return application.createDeal.handle(new CreateDeal.NewDeal(
-                title, company, owner, new BigDecimal(amount), "EUR", 50));
+                title, company, owner, owner, new BigDecimal(amount), "EUR", 50));
     }
 
     private User person(String name, UserRole role) {

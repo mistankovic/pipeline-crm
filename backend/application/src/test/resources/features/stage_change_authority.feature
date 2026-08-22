@@ -46,3 +46,18 @@ Feature: Who may move a deal
   Scenario: An unknown deal cannot be moved
     When Sam tries to move an unknown deal to QUALIFIED
     Then the move is rejected because the deal does not exist
+
+  Scenario: The board offers a salesperson no moves on somebody else's deal
+    Given Sam owns a deal "Acme renewal" in stage LEAD worth 10000 EUR
+    When Robin looks at "Acme renewal"
+    Then Robin is offered no way to move it
+
+  Scenario: The board offers the owner the moves the pipeline allows
+    Given Sam owns a deal "Acme renewal" in stage LEAD worth 10000 EUR
+    When Sam looks at "Acme renewal"
+    Then Sam is offered the moves QUALIFIED, CLOSED_LOST
+
+  Scenario: A manager is offered the same moves as the owner
+    Given Sam owns a deal "Acme renewal" in stage LEAD worth 10000 EUR
+    When Mo looks at "Acme renewal"
+    Then Mo is offered the moves QUALIFIED, CLOSED_LOST

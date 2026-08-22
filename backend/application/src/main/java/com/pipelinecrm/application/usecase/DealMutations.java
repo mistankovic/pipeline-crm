@@ -40,6 +40,6 @@ public final class DealMutations {
         change.accept(deal, actor);
 
         history.save(deal);
-        return DealViews.of(deal, parties.companyOf(deal), parties.ownerOf(deal));
+        return DealViews.asSeenBy(deal, parties.companyOf(deal), parties.ownerOf(deal), actor);
     }
 }

@@ -82,7 +82,7 @@ class DealUseCasesTest {
     @Test
     void a_deal_cannot_be_created_for_a_company_that_does_not_exist() {
         CreateDeal.NewDeal request = new CreateDeal.NewDeal(
-                "Ghost", UUID.randomUUID(), sam.id().value(), BigDecimal.TEN, "EUR", 50);
+                "Ghost", UUID.randomUUID(), sam.id().value(), sam.id().value(), BigDecimal.TEN, "EUR", 50);
 
         assertThatThrownBy(() -> application.createDeal.handle(request))
                 .isInstanceOf(UnknownEntity.class).hasMessageContaining("no company with id");
@@ -91,7 +91,7 @@ class DealUseCasesTest {
     @Test
     void a_deal_cannot_be_created_for_an_owner_who_does_not_exist() {
         CreateDeal.NewDeal request = new CreateDeal.NewDeal(
-                "Ghost", acme, UUID.randomUUID(), BigDecimal.TEN, "EUR", 50);
+                "Ghost", acme, UUID.randomUUID(), sam.id().value(), BigDecimal.TEN, "EUR", 50);
 
         assertThatThrownBy(() -> application.createDeal.handle(request))
                 .isInstanceOf(UnknownEntity.class).hasMessageContaining("no user with id");
@@ -100,7 +100,7 @@ class DealUseCasesTest {
     @Test
     void a_deal_cannot_be_created_in_a_currency_that_does_not_exist() {
         CreateDeal.NewDeal request = new CreateDeal.NewDeal(
-                "Ghost", acme, sam.id().value(), BigDecimal.TEN, "XYZ", 50);
+                "Ghost", acme, sam.id().value(), sam.id().value(), BigDecimal.TEN, "XYZ", 50);
 
         assertThatThrownBy(() -> application.createDeal.handle(request))
                 .isInstanceOf(InvariantViolation.class).hasMessageContaining("unknown currency code");
@@ -109,7 +109,7 @@ class DealUseCasesTest {
     @Test
     void a_deal_cannot_be_created_with_an_impossible_probability() {
         CreateDeal.NewDeal request = new CreateDeal.NewDeal(
-                "Ghost", acme, sam.id().value(), BigDecimal.TEN, "EUR", 150);
+                "Ghost", acme, sam.id().value(), sam.id().value(), BigDecimal.TEN, "EUR", 150);
 
         assertThatThrownBy(() -> application.createDeal.handle(request))
                 .isInstanceOf(InvariantViolation.class).hasMessageContaining("between 0 and 100");
@@ -152,7 +152,7 @@ class DealUseCasesTest {
 
         move(deal, DealStage.QUALIFIED, sam);
 
-        assertThat(application.viewDeal.handle(deal).deal().stage()).isEqualTo("QUALIFIED");
+        assertThat(application.viewDeal.handle(deal, sam.id().value()).deal().stage()).isEqualTo("QUALIFIED");
     }
 
     @Test

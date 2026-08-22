@@ -341,6 +341,62 @@ class DealTest {
     }
 
     @Test
+    void offers_a_stranger_no_moves_at_all() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+
+        assertThat(deal.transitionsAllowedFor(stranger)).isEmpty();
+    }
+
+    @Test
+    void offers_the_owner_the_moves_the_stage_machine_allows() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+
+        assertThat(deal.transitionsAllowedFor(owner))
+                .containsExactlyInAnyOrder(DealStage.QUALIFIED, DealStage.CLOSED_LOST);
+    }
+
+    @Test
+    void offers_a_manager_the_same_moves_as_the_owner() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+
+        assertThat(deal.transitionsAllowedFor(manager)).isEqualTo(deal.transitionsAllowedFor(owner));
+    }
+
+    @Test
+    void offers_the_owner_of_a_closed_deal_nothing() {
+        assertThat(closedDealAt(DealStage.CLOSED_WON).transitionsAllowedFor(owner)).isEmpty();
+    }
+
+    @Test
+    void refuses_to_say_what_nobody_may_do() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+
+        assertThatThrownBy(() -> deal.transitionsAllowedFor(null)).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
+    void says_the_owner_may_change_it() {
+        assertThat(Examples.dealWorth("1000", ownerId).mayBeChangedBy(owner)).isTrue();
+    }
+
+    @Test
+    void says_a_manager_may_change_it() {
+        assertThat(Examples.dealWorth("1000", ownerId).mayBeChangedBy(manager)).isTrue();
+    }
+
+    @Test
+    void says_a_stranger_may_not_change_it() {
+        assertThat(Examples.dealWorth("1000", ownerId).mayBeChangedBy(stranger)).isFalse();
+    }
+
+    @Test
+    void refuses_to_say_whether_nobody_may_change_it() {
+        Deal deal = Examples.dealWorth("1000", ownerId);
+
+        assertThatThrownBy(() -> deal.mayBeChangedBy(null)).isInstanceOf(InvariantViolation.class);
+    }
+
+    @Test
     void keeps_the_title_it_was_opened_with() {
         assertThat(Examples.dealWorth("1000", ownerId).title()).isEqualTo("Acme renewal");
     }

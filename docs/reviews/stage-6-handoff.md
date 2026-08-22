@@ -103,3 +103,69 @@ comment saying why.
 * CORS: decided as **D-19** — the browser and the API share an origin in development (Vite
   proxy) and in the packaged demo (nginx), so there is no CORS problem to configure. The
   decision names what would change it.
+
+---
+
+# Stage 6 hand-off — round 2 (response to review)
+
+| Finding | Disposition |
+|---------|-------------|
+| F-6.1 every refusal silently swallowed | **Fixed, and the fix is a class, not a patch.** `Failures.attempt(action, reload)` runs both as one unit: only `attempt` may clear the error, and only *before* the action runs, so a reload cannot wipe what the action just recorded. Every screen and the new-deal form use it; not one of them keeps its own `failure` variable any more. Eight new tests in `failures.test.ts`. **I proved the test catches the original defect** by reintroducing the clear-on-reload line: `× KEEPS the refusal through the reload that follows it`. |
+| F-6.2 the board invites moves it knows will be refused | **Fixed in the domain, as the review demanded.** `Deal.transitionsAllowedFor(User)` and `Deal.mayBeChangedBy(User)` answer the question the view was pretending to answer. `DealView` gained `youMayChangeThis` and its `allowedTransitions` is now the caller's list. Crucially there is **no** overload of `DealViews` that omits the caller — the first version defaulted it to the owner, which was the bug wearing a hat — so every read had to start naming who is asking: `ViewPipeline.everything(callerId)`, `ViewDeal.handle(dealId, callerId)`. Nine domain tests, five use-case tests and three Gherkin scenarios pin it; three API tests pin the JSON. |
+| F-6.3 an expired token leaves the user stuck | **Fixed.** Any 401, from any call, ends the session. Two tests. |
+| F-6.4 activity types written down twice | **Fixed.** `ACTIVITY_TYPES` is declared once in `types.ts`; the dropdown is built from it and the `ActivityType` union is derived from it. |
+| F-6.5 a slow load looks like an empty pipeline | **Fixed.** The board shows "Loading the pipeline…" until the first response arrives, so an empty board only ever means an empty board. |
+
+## Verified in a browser, not in an argument
+
+Two users, side by side, against the real stack:
+
+```
+SAM   card draggable: true
+ROBIN card draggable: false
+ROBIN stage after drag: LEAD                 ← the card would not move
+ROBIN moves offered: 0
+ROBIN told why: Sam Sales owns this deal. Only they or a manager may change it.
+ROBIN revise controls: 0
+```
+
+Robin is no longer *invited* to do the thing that gets refused, and is told why in words.
+
+And a refusal Sam can still legitimately trigger — winning a deal with no meeting logged:
+
+```
+stage now: Negotiation
+F-6.1 banner shown: 1
+F-6.1 banner text : this deal cannot be won: no call or meeting has been logged against it
+stage unchanged   : Negotiation
+```
+
+That sentence came from `WinRequiresValueAndEngagement` in the domain, through the 409, through
+`ApiError`, onto the screen — the whole chain this project exists to demonstrate, working, with
+the user finally on the end of it.
+
+Finally, a tampered token:
+
+```
+F-6.3 back at sign-in: true
+```
+
+## What the browser found that nothing else could
+
+Both of this stage's real defects were invisible to the type checker and to every unit test:
+
+1. `fetch` held in a field throws "Illegal invocation" — types fine, tests fine, application
+   completely broken.
+2. Every refusal wiped by the following reload — types fine, tests fine, and the one user who
+   most needed an explanation got silence.
+
+The lesson is the same one as F-3.1 in a different medium: **the tests covered the code that
+had bugs, and proved nothing about it.** There is now a unit test for the second, written after
+the fact, and Stage 7's QA procedures exist for the first.
+
+## Metrics (round 2)
+
+* `svelte-check`: 313 files, 0 errors, 0 warnings.
+* **26 frontend unit tests** (was 18).
+* `domain` 128 methods, worst CRAP 5.00, 100 % coverage, 100 % mutation.
+* `application` 151 tests including **72 Gherkin scenarios**, 88/88 mutants, worst CRAP 2.00.

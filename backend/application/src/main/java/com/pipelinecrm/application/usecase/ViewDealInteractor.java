@@ -20,10 +20,11 @@ public final class ViewDealInteractor implements ViewDeal {
     }
 
     @Override
-    public DealDetail handle(UUID dealId) {
+    public DealDetail handle(UUID dealId, UUID callerId) {
         Deal deal = history.deal(dealId);
         return new DealDetail(
-                DealViews.of(deal, parties.companyOf(deal), parties.ownerOf(deal)),
+                DealViews.asSeenBy(deal, parties.companyOf(deal), parties.ownerOf(deal),
+                        parties.user(callerId)),
                 timelines.of(history.of(deal).activities()));
     }
 }

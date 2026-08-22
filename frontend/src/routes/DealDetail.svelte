@@ -2,39 +2,28 @@
   import ActivityTimeline from '../components/ActivityTimeline.svelte';
   import ErrorBanner from '../components/ErrorBanner.svelte';
   import { money, percentage, stageLabel } from '../lib/format';
+  import { Failures } from '../lib/failures.svelte';
   import { session } from '../lib/session.svelte';
-  import type { DealDetail } from '../lib/types';
+  import { ACTIVITY_TYPES, type ActivityType, type DealDetail } from '../lib/types';
 
   let { dealId, onback }: { dealId: string; onback: () => void } = $props();
 
+  const failures = new Failures();
+
   let detail = $state<DealDetail | null>(null);
-  let failure = $state<unknown>(null);
 
   let summary = $state('');
-  let type = $state('CALL');
+  let type = $state<ActivityType>('CALL');
   let newValue = $state(0);
   let newProbability = $state(0);
 
-  async function load() {
-    failure = null;
-    try {
-      detail = await session.api.deal(dealId);
-      newValue = detail.deal.value.amount;
-      newProbability = detail.deal.probability;
-    } catch (refused) {
-      failure = refused;
-    }
+  async function reload() {
+    detail = await session.api.deal(dealId);
+    newValue = detail.deal.value.amount;
+    newProbability = detail.deal.probability;
   }
 
-  async function attempt(action: () => Promise<unknown>) {
-    failure = null;
-    try {
-      await action();
-    } catch (refused) {
-      failure = refused;
-    }
-    await load();
-  }
+  const attempt = (action: () => Promise<unknown>) => failures.attempt(action, reload);
 
   const move = (stage: string) => attempt(() => session.api.moveDeal(dealId, stage));
 
@@ -53,13 +42,13 @@
 
   $effect(() => {
     void dealId;
-    void load();
+    void failures.attempt(reload);
   });
 </script>
 
 <section>
   <button onclick={onback} data-testid="back">← Back to the board</button>
-  <ErrorBanner {failure} />
+  <ErrorBanner failure={failures.failure} />
 
   {#if detail}
     <header class="card head">
@@ -80,7 +69,11 @@
     <div class="panels">
       <div class="card">
         <h2>Move</h2>
-        {#if detail.deal.allowedTransitions.length === 0}
+        {#if !detail.deal.youMayChangeThis}
+          <p class="muted" data-testid="not-yours">
+            {detail.deal.owner.name} owns this deal. Only they or a manager may change it.
+          </p>
+        {:else if detail.deal.allowedTransitions.length === 0}
           <p class="muted">This deal is closed. Nothing moves it now.</p>
         {:else}
           <div class="moves">
@@ -92,27 +85,29 @@
           </div>
         {/if}
 
-        <h2>Revise</h2>
-        <label>
-          <span>Value ({detail.deal.value.currency})</span>
-          <input type="number" min="0" bind:value={newValue} data-testid="revise-value" />
-        </label>
-        <button onclick={reprice} data-testid="save-value">Save value</button>
+        {#if detail.deal.youMayChangeThis}
+          <h2>Revise</h2>
+          <label>
+            <span>Value ({detail.deal.value.currency})</span>
+            <input type="number" min="0" bind:value={newValue} data-testid="revise-value" />
+          </label>
+          <button onclick={reprice} data-testid="save-value">Save value</button>
 
-        <label class="spaced">
-          <span>Probability %</span>
-          <input type="number" min="0" max="100" bind:value={newProbability} data-testid="revise-probability" />
-        </label>
-        <button onclick={reweight} data-testid="save-probability">Save probability</button>
+          <label class="spaced">
+            <span>Probability %</span>
+            <input type="number" min="0" max="100" bind:value={newProbability} data-testid="revise-probability" />
+          </label>
+          <button onclick={reweight} data-testid="save-probability">Save probability</button>
+        {/if}
       </div>
 
       <div class="card">
         <h2>Timeline</h2>
         <form onsubmit={log} class="log">
           <select bind:value={type} data-testid="activity-type-input">
-            <option value="NOTE">Note</option>
-            <option value="CALL">Call</option>
-            <option value="MEETING">Meeting</option>
+            {#each ACTIVITY_TYPES as kind (kind)}
+              <option value={kind}>{kind.charAt(0) + kind.slice(1).toLowerCase()}</option>
+            {/each}
           </select>
           <input bind:value={summary} placeholder="What happened?" required data-testid="activity-summary" />
           <button class="primary" type="submit" data-testid="log-activity">Log</button>

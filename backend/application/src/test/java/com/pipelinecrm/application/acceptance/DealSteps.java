@@ -57,13 +57,14 @@ public class DealSteps {
     @When("{word} tries to create a deal {string} for {string} with an unknown owner")
     public void triesToCreateADealWithAnUnknownOwner(String actor, String title, String company) {
         world.attempt(() -> world.application.createDeal.handle(new CreateDeal.NewDeal(
-                title, world.company(company), UUID.randomUUID(),
+                title, world.company(company), UUID.randomUUID(), world.person(actor),
                 BigDecimal.valueOf(1000), "EUR", 50)));
     }
 
     private DealView create(String owner, String title, UUID company, Amount amount) {
+        UUID person = world.person(owner);
         return world.application.createDeal.handle(new CreateDeal.NewDeal(
-                title, company, world.person(owner), amount.value(), amount.currency(), amount.probability()));
+                title, company, person, person, amount.value(), amount.currency(), amount.probability()));
     }
 
     @When("{word} moves {string} to {stage}")
@@ -81,6 +82,24 @@ public class DealSteps {
     public void triesToMoveAnUnknownDeal(String actor, DealStage stage) {
         world.attempt(() -> world.application.changeDealStage.handle(new ChangeDealStage.StageChange(
                 UUID.randomUUID(), stage, world.person(actor))));
+    }
+
+    @When("{word} looks at {string}")
+    public void looksAt(String viewer, String title) {
+        world.rememberViewOf(title,
+                world.application.viewDeal.handle(world.deal(title), world.person(viewer)).deal());
+    }
+
+    @Then("{word} is offered no way to move it")
+    public void isOfferedNoWayToMoveIt(String viewer) {
+        assertThat(world.lastViewed().allowedTransitions()).isEmpty();
+        assertThat(world.lastViewed().youMayChangeThis()).isFalse();
+    }
+
+    @Then("{word} is offered the moves {word}, {word}")
+    public void isOfferedTheMoves(String viewer, String first, String second) {
+        assertThat(world.lastViewed().allowedTransitions()).containsExactlyInAnyOrder(first, second);
+        assertThat(world.lastViewed().youMayChangeThis()).isTrue();
     }
 
     @Then("the deal {string} is in stage {stage}")

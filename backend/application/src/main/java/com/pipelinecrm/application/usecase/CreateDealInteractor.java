@@ -41,7 +41,9 @@ public final class CreateDealInteractor implements CreateDeal {
         Deal deal = Deal.open(DealId.of(writing.identifiers().newIdentifier()), request.title(),
                 new DealParties(company.id(), owner.id()), termsIn(request));
         deals.save(deal);
-        return DealViews.of(deal, company, owner);
+        // The creator sees it as themselves; if they opened it for a colleague, they are told
+        // plainly that they may not now change it.
+        return DealViews.asSeenBy(deal, company, owner, parties.user(request.creatorId()));
     }
 
     private DealTerms termsIn(NewDeal request) {

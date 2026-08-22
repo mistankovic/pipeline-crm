@@ -97,7 +97,7 @@ class ReadingUseCasesTest {
         seed.deal("One", acme, sam.id().value(), "1000");
         seed.deal("Two", globex, robin.id().value(), "2000");
 
-        assertThat(application.viewPipeline.everything()).extracting(DealView::title)
+        assertThat(application.viewPipeline.everything(sam.id().value())).extracting(DealView::title)
                 .containsExactly("One", "Two");
     }
 
@@ -106,7 +106,7 @@ class ReadingUseCasesTest {
         seed.deal("One", acme, sam.id().value(), "1000");
         seed.deal("Two", globex, robin.id().value(), "2000");
 
-        assertThat(application.viewPipeline.ownedBy(robin.id().value()))
+        assertThat(application.viewPipeline.ownedBy(robin.id().value(), sam.id().value()))
                 .extracting(DealView::title).containsExactly("Two");
     }
 
@@ -114,7 +114,7 @@ class ReadingUseCasesTest {
     void names_the_company_and_owner_of_every_deal_on_the_board() {
         seed.deal("One", acme, sam.id().value(), "1000");
 
-        assertThat(application.viewPipeline.everything()).singleElement()
+        assertThat(application.viewPipeline.everything(sam.id().value())).singleElement()
                 .satisfies(deal -> {
                     assertThat(deal.company().name()).isEqualTo("Acme");
                     assertThat(deal.owner().name()).isEqualTo("Sam");
@@ -122,10 +122,65 @@ class ReadingUseCasesTest {
     }
 
     @Test
+    void a_deal_offers_its_owner_the_moves_they_may_make() {
+        UUID deal = seed.deal("One", acme, sam.id().value(), "1000").id();
+
+        assertThat(application.viewDeal.handle(deal, sam.id().value()).deal())
+                .satisfies(view -> {
+                    assertThat(view.allowedTransitions()).containsExactlyInAnyOrder("QUALIFIED", "CLOSED_LOST");
+                    assertThat(view.youMayChangeThis()).isTrue();
+                });
+    }
+
+    @Test
+    void the_same_deal_offers_a_rival_salesperson_nothing() {
+        UUID deal = seed.deal("One", acme, sam.id().value(), "1000").id();
+
+        assertThat(application.viewDeal.handle(deal, robin.id().value()).deal())
+                .satisfies(view -> {
+                    assertThat(view.allowedTransitions()).isEmpty();
+                    assertThat(view.youMayChangeThis()).isFalse();
+                });
+    }
+
+    @Test
+    void the_board_describes_each_deal_from_the_point_of_view_of_whoever_asked() {
+        seed.deal("Sams", acme, sam.id().value(), "1000");
+        seed.deal("Robins", globex, robin.id().value(), "1000");
+
+        assertThat(application.viewPipeline.everything(sam.id().value()))
+                .anySatisfy(view -> {
+                    assertThat(view.title()).isEqualTo("Sams");
+                    assertThat(view.youMayChangeThis()).isTrue();
+                })
+                .anySatisfy(view -> {
+                    assertThat(view.title()).isEqualTo("Robins");
+                    assertThat(view.youMayChangeThis()).isFalse();
+                });
+    }
+
+    @Test
+    void a_manager_is_offered_moves_on_everybodys_deals() {
+        User mo = seed.manager("Mo");
+        seed.deal("Sams", acme, sam.id().value(), "1000");
+
+        assertThat(application.viewPipeline.everything(mo.id().value()))
+                .allSatisfy(view -> assertThat(view.youMayChangeThis()).isTrue());
+    }
+
+    @Test
+    void a_caller_who_does_not_exist_cannot_read_the_board() {
+        UUID nobody = UUID.randomUUID();
+
+        assertThatThrownBy(() -> application.viewPipeline.everything(nobody))
+                .isInstanceOf(UnknownEntity.class).hasMessageContaining("no user with id");
+    }
+
+    @Test
     void an_unknown_deal_has_no_detail_view() {
         UUID nothing = UUID.randomUUID();
 
-        assertThatThrownBy(() -> application.viewDeal.handle(nothing))
+        assertThatThrownBy(() -> application.viewDeal.handle(nothing, sam.id().value()))
                 .isInstanceOf(UnknownEntity.class).hasMessageContaining("no deal with id");
     }
 
@@ -135,7 +190,7 @@ class ReadingUseCasesTest {
         log(deal, "NOTE", "first");
         log(deal, "CALL", "second");
 
-        assertThat(application.viewDeal.handle(deal).timeline())
+        assertThat(application.viewDeal.handle(deal, sam.id().value()).timeline())
                 .extracting("summary").containsExactly("first", "second");
     }
 

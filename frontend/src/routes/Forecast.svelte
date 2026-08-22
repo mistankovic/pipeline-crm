@@ -1,20 +1,19 @@
 <script lang="ts">
   import ErrorBanner from '../components/ErrorBanner.svelte';
   import { money } from '../lib/format';
+  import { Failures } from '../lib/failures.svelte';
   import { session } from '../lib/session.svelte';
   import type { ForecastView } from '../lib/types';
 
   let dimension = $state<'OWNER' | 'STAGE'>('OWNER');
   let forecast = $state<ForecastView | null>(null);
-  let failure = $state<unknown>(null);
+  const failures = new Failures();
 
   $effect(() => {
     const by = dimension;
-    failure = null;
-    session.api
-      .forecast(by)
-      .then((produced) => (forecast = produced))
-      .catch((refused) => (failure = refused));
+    void failures.attempt(async () => {
+      forecast = await session.api.forecast(by);
+    });
   });
 </script>
 
@@ -35,7 +34,7 @@
     currencies are never added together — two currencies mean two lines.
   </p>
 
-  <ErrorBanner {failure} />
+  <ErrorBanner failure={failures.failure} />
 
   {#if forecast}
     <table class="card" data-testid="forecast-table">

@@ -9,7 +9,7 @@ import java.util.UUID;
 /** One deal and its timeline. */
 public interface ViewDeal {
 
-    DealDetail handle(UUID dealId);
+    DealDetail handle(UUID dealId, UUID callerId);
 
     record DealDetail(DealView deal, List<ActivityView> timeline) {
     }

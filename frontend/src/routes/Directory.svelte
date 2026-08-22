@@ -1,13 +1,14 @@
 <script lang="ts">
   import ActivityTimeline from '../components/ActivityTimeline.svelte';
   import ErrorBanner from '../components/ErrorBanner.svelte';
+  import { Failures } from '../lib/failures.svelte';
   import { session } from '../lib/session.svelte';
   import type { ActivityView, CompanyView, ContactView } from '../lib/types';
 
   let companies = $state<CompanyView[]>([]);
   let contacts = $state<ContactView[]>([]);
   let filter = $state('');
-  let failure = $state<unknown>(null);
+  const failures = new Failures();
 
   let companyName = $state('');
   let contactName = $state('');
@@ -18,26 +19,13 @@
   let timeline = $state<ActivityView[]>([]);
   let note = $state('');
 
-  async function load() {
-    failure = null;
-    try {
-      companies = await session.api.companies();
-      contacts = await session.api.contacts(filter || undefined);
-      contactCompany = contactCompany || (companies[0]?.id ?? '');
-    } catch (refused) {
-      failure = refused;
-    }
+  async function reload() {
+    companies = await session.api.companies();
+    contacts = await session.api.contacts(filter || undefined);
+    contactCompany = contactCompany || (companies[0]?.id ?? '');
   }
 
-  async function attempt(action: () => Promise<unknown>) {
-    failure = null;
-    try {
-      await action();
-    } catch (refused) {
-      failure = refused;
-    }
-    await load();
-  }
+  const attempt = (action: () => Promise<unknown>) => failures.attempt(action, reload);
 
   const addCompany = (event: Event) => {
     event.preventDefault();
@@ -58,12 +46,9 @@
 
   async function show(contactId: string) {
     openContact = contactId;
-    failure = null;
-    try {
+    await failures.attempt(async () => {
       timeline = await session.api.contactTimeline(contactId);
-    } catch (refused) {
-      failure = refused;
-    }
+    });
   }
 
   const addNote = (event: Event) => {
@@ -78,13 +63,13 @@
 
   $effect(() => {
     void filter;
-    void load();
+    void failures.attempt(reload);
   });
 </script>
 
 <section>
   <h1>Companies and contacts</h1>
-  <ErrorBanner {failure} />
+  <ErrorBanner failure={failures.failure} />
 
   <div class="panels">
     <div class="card">

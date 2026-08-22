@@ -20,5 +20,6 @@ public record DealView(
         int probability,
         String stage,
         MoneyView weightedValue,
-        List<String> allowedTransitions) {
+        List<String> allowedTransitions,
+        boolean youMayChangeThis) {
 }

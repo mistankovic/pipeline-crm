@@ -15,7 +15,15 @@ public final class DealViews {
     private DealViews() {
     }
 
-    public static DealView of(Deal deal, Company company, User owner) {
+    /**
+     * A deal as one particular caller sees it.
+     *
+     * <p>There is deliberately no overload that omits the caller. A default of "the owner" was
+     * written first and was exactly the defect being fixed: every reader would have been told
+     * the owner's permissions. Making the argument mandatory forced every read to say who is
+     * asking, which is what they should always have done.
+     */
+    public static DealView asSeenBy(Deal deal, Company company, User owner, User caller) {
         return new DealView(
                 deal.id().value(),
                 deal.title(),
@@ -25,6 +33,7 @@ public final class DealViews {
                 deal.probability().percentage(),
                 deal.stage().name(),
                 MoneyViews.of(deal.weightedValue()),
-                deal.allowedTransitions().stream().map(DealStage::name).toList());
+                deal.transitionsAllowedFor(caller).stream().map(DealStage::name).toList(),
+                deal.mayBeChangedBy(caller));
     }
 }

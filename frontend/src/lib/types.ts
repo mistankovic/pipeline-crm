@@ -41,11 +41,22 @@ export type DealView = {
    * one changed. See docs/domain-decisions.md, decision D-11.
    */
   allowedTransitions: string[];
+  /**
+   * Whether the caller may change this deal at all. Also decided by the server: comparing
+   * `owner.id` to the signed-in user here would be rule 2 reimplemented in TypeScript, and it
+   * would be wrong the moment a manager signed in.
+   */
+  youMayChangeThis: boolean;
 };
+
+/** The kinds of activity, in one place. The dropdown is built from this list. */
+export const ACTIVITY_TYPES = ['NOTE', 'CALL', 'MEETING'] as const;
+
+export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
 export type ActivityView = {
   id: string;
-  type: 'NOTE' | 'CALL' | 'MEETING';
+  type: ActivityType;
   summary: string;
   dealId: string | null;
   contactId: string | null;

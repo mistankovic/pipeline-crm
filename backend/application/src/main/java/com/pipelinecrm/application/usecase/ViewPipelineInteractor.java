@@ -6,6 +6,7 @@ import com.pipelinecrm.application.view.DealView;
 import com.pipelinecrm.application.view.DealViews;
 import com.pipelinecrm.domain.deal.Deal;
 import com.pipelinecrm.domain.identity.UserId;
+import com.pipelinecrm.domain.user.User;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,19 +27,20 @@ public final class ViewPipelineInteractor implements ViewPipeline {
     }
 
     @Override
-    public List<DealView> everything() {
-        return viewsOf(deals.findAll());
+    public List<DealView> everything(UUID callerId) {
+        return viewsOf(deals.findAll(), callerId);
     }
 
     @Override
-    public List<DealView> ownedBy(UUID ownerId) {
-        return viewsOf(deals.findOwnedBy(UserId.of(ownerId)));
+    public List<DealView> ownedBy(UUID ownerId, UUID callerId) {
+        return viewsOf(deals.findOwnedBy(UserId.of(ownerId)), callerId);
     }
 
-    private List<DealView> viewsOf(List<Deal> found) {
+    private List<DealView> viewsOf(List<Deal> found, UUID callerId) {
+        User caller = parties.user(callerId);
         PartyIndex index = parties.indexFor(found);
         return found.stream()
-                .map(deal -> DealViews.of(deal, index.companyOf(deal), index.ownerOf(deal)))
+                .map(deal -> DealViews.asSeenBy(deal, index.companyOf(deal), index.ownerOf(deal), caller))
                 .toList();
     }
 }

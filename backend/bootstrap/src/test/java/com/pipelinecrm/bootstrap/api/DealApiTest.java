@@ -98,6 +98,31 @@ class DealApiTest extends ApiTest {
     }
 
     @Test
+    void a_rival_salesperson_is_offered_no_moves_at_all() throws Exception {
+        String deal = createDeal("Acme renewal", "10000", 50).get("id").asText();
+
+        http.perform(as(get("/api/deals/" + deal), tokenFor(ROBIN, ROBIN_PASSWORD)))
+                .andExpect(jsonPath("$.deal.allowedTransitions").isEmpty())
+                .andExpect(jsonPath("$.deal.youMayChangeThis").value(false));
+    }
+
+    @Test
+    void the_owner_is_told_they_may_change_their_own_deal() throws Exception {
+        String deal = createDeal("Acme renewal", "10000", 50).get("id").asText();
+
+        http.perform(as(get("/api/deals/" + deal), sam()))
+                .andExpect(jsonPath("$.deal.youMayChangeThis").value(true));
+    }
+
+    @Test
+    void a_manager_is_told_they_may_change_anybodys_deal() throws Exception {
+        String deal = createDeal("Acme renewal", "10000", 50).get("id").asText();
+
+        http.perform(as(get("/api/deals/" + deal), tokenFor(MO, MO_PASSWORD)))
+                .andExpect(jsonPath("$.deal.youMayChangeThis").value(true));
+    }
+
+    @Test
     void another_salesperson_moving_a_deal_is_403() throws Exception {
         String deal = createDeal("Acme renewal", "10000", 50).get("id").asText();
 

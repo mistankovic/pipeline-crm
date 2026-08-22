@@ -15,7 +15,9 @@
 
 <div
   class="card deal"
-  draggable="true"
+  class:immovable={!deal.youMayChangeThis}
+  title={deal.youMayChangeThis ? '' : `Owned by ${deal.owner.name}. Only they or a manager may move it.`}
+  draggable={deal.youMayChangeThis}
   data-testid="deal-card"
   data-deal-id={deal.id}
   data-stage={deal.stage}
@@ -35,6 +37,8 @@
 
 <style>
   .deal { margin-bottom: 0.5rem; cursor: grab; }
+  /* The server said this caller may not change it. The card still opens; it just does not drag. */
+  .deal.immovable { cursor: pointer; border-style: dashed; opacity: 0.75; }
   .deal h3 { font-size: 14px; }
   .deal p { margin: 0.15rem 0; font-size: 12px; }
   .figures { display: flex; justify-content: space-between; gap: 0.5rem; }

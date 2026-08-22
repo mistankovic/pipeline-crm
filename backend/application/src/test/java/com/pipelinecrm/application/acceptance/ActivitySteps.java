@@ -56,7 +56,7 @@ public class ActivitySteps {
 
     @When("the timeline of an unknown deal is requested")
     public void theTimelineOfAnUnknownDealIsRequested() {
-        world.attempt(() -> world.application.viewDeal.handle(UUID.randomUUID()));
+        world.attempt(() -> world.application.viewDeal.handle(UUID.randomUUID(), world.anybody()));
     }
 
     @Then("the timeline of {string} has {int} entry")
@@ -86,7 +86,7 @@ public class ActivitySteps {
     }
 
     private List<ActivityView> timelineOf(String title) {
-        return world.application.viewDeal.handle(world.deal(title)).timeline();
+        return world.application.viewDeal.handle(world.deal(title), ownerOf(title)).timeline();
     }
 
     private void logAgainstDeal(UUID deal, String type, String summary, UUID author) {

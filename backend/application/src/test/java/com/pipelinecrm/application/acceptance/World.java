@@ -34,6 +34,7 @@ public final class World {
     private RuntimeException failure;
     private boolean failureWasAsserted;
     private ForecastView forecast;
+    private DealView lastViewed;
 
     void rememberPerson(String name, UUID id) {
         // Two people with the same name would share one derived email address and silently
@@ -71,8 +72,22 @@ public final class World {
         return required(deals, title, "deal");
     }
 
+    /** How the deal's own owner sees it. Scenarios that care about another viewer say so. */
     DealView currentStateOf(String title) {
-        return application.viewDeal.handle(deal(title)).deal();
+        DealView asAnybody = application.viewPipeline.everything(anyKnownPerson()).stream()
+                .filter(candidate -> candidate.id().equals(deal(title)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("the deal \"" + title + "\" is not on the board"));
+        return application.viewDeal.handle(deal(title), asAnybody.owner().id()).deal();
+    }
+
+    /** Any signed-in person, for a step where the viewer is not the point. */
+    UUID anybody() {
+        return anyKnownPerson();
+    }
+
+    private UUID anyKnownPerson() {
+        return people.values().iterator().next();
     }
 
     /**
@@ -116,6 +131,16 @@ public final class World {
     void expectRefusal(Class<? extends RuntimeException> expected, String messageFragment) {
         expectRefusal(expected);
         assertThat(failure).hasMessageContaining(messageFragment);
+    }
+
+    void rememberViewOf(String title, DealView view) {
+        deal(title);
+        lastViewed = view;
+    }
+
+    DealView lastViewed() {
+        assertThat(lastViewed).describedAs("nobody has looked at a deal yet").isNotNull();
+        return lastViewed;
     }
 
     void rememberForecast(ForecastView produced) {

@@ -3,35 +3,26 @@
   import StageColumn from '../components/StageColumn.svelte';
   import NewDealForm from '../components/NewDealForm.svelte';
   import { columnsOf } from '../lib/board';
+  import { Failures } from '../lib/failures.svelte';
   import { session } from '../lib/session.svelte';
   import type { DealView, UserView } from '../lib/types';
 
   let { onopen }: { onopen: (deal: DealView) => void } = $props();
 
+  const failures = new Failures();
+
   let deals = $state<DealView[]>([]);
   let users = $state<UserView[]>([]);
   let ownerFilter = $state('');
   let dragged = $state<DealView | null>(null);
-  let failure = $state<unknown>(null);
   let creating = $state(false);
+  let loaded = $state(false);
 
   const columns = $derived(columnsOf(deals));
 
-  async function load() {
-    failure = null;
-    try {
-      deals = await session.api.deals(ownerFilter || undefined);
-    } catch (refused) {
-      failure = refused;
-    }
-  }
-
-  async function loadUsers() {
-    try {
-      users = await session.api.users();
-    } catch (refused) {
-      failure = refused;
-    }
+  async function reload() {
+    deals = await session.api.deals(ownerFilter || undefined);
+    loaded = true;
   }
 
   async function drop(stage: string) {
@@ -40,22 +31,18 @@
     if (!moving) {
       return;
     }
-    failure = null;
-    try {
-      await session.api.moveDeal(moving.id, stage);
-    } catch (refused) {
-      failure = refused;
-    }
-    await load();
+    await failures.attempt(() => session.api.moveDeal(moving.id, stage), reload);
   }
 
   $effect(() => {
     void ownerFilter;
-    void load();
+    void failures.attempt(reload);
   });
 
   $effect(() => {
-    void loadUsers();
+    void failures.attempt(async () => {
+      users = await session.api.users();
+    });
   });
 </script>
 
@@ -76,30 +63,34 @@
     </button>
   </header>
 
-  <ErrorBanner {failure} />
+  <ErrorBanner failure={failures.failure} />
 
   {#if creating}
     <NewDealForm
       {users}
       oncreated={async () => {
         creating = false;
-        await load();
+        await failures.attempt(reload);
       }}
     />
   {/if}
 
-  <div class="board" ondragend={() => (dragged = null)} role="presentation">
-    {#each columns as column (column.stage)}
-      <StageColumn
-        stage={column.stage}
-        deals={column.deals}
-        {dragged}
-        ondragstart={(deal) => (dragged = deal)}
-        ondrop={drop}
-        {onopen}
-      />
-    {/each}
-  </div>
+  {#if !loaded}
+    <p class="muted" data-testid="loading">Loading the pipeline…</p>
+  {:else}
+    <div class="board" ondragend={() => (dragged = null)} role="presentation">
+      {#each columns as column (column.stage)}
+        <StageColumn
+          stage={column.stage}
+          deals={column.deals}
+          {dragged}
+          ondragstart={(deal) => (dragged = deal)}
+          ondrop={drop}
+          {onopen}
+        />
+      {/each}
+    </div>
+  {/if}
 </section>
 
 <style>

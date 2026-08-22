@@ -31,7 +31,7 @@ final class Fixtures {
     UUID dealAt(String owner, String title, DealStage stage, Amount amount) {
         UUID ownerId = world.person(owner);
         UUID deal = world.application.createDeal.handle(new CreateDeal.NewDeal(title,
-                world.company(DEFAULT_COMPANY), ownerId,
+                world.company(DEFAULT_COMPANY), ownerId, ownerId,
                 amount.value(), amount.currency(), amount.probability())).id();
         world.rememberDeal(title, deal);
         walkTo(stage, deal, ownerId);

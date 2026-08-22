@@ -14,6 +14,7 @@ public interface CreateDeal {
             String title,
             UUID companyId,
             UUID ownerId,
+            UUID creatorId,
             BigDecimal value,
             String currency,
             int probability) {

@@ -52,22 +52,28 @@ public class DealController {
     }
 
     @GetMapping
-    public List<DealView> board(@RequestParam(name = "ownerId", required = false) UUID ownerId) {
-        return Optional.ofNullable(ownerId).map(pipeline::ownedBy).orElseGet(pipeline::everything);
+    public List<DealView> board(@RequestParam(name = "ownerId", required = false) UUID ownerId,
+                                @AuthenticationPrincipal SignedInUser caller) {
+        UUID asker = caller.id().value();
+        return Optional.ofNullable(ownerId)
+                .map(owner -> pipeline.ownedBy(owner, asker))
+                .orElseGet(() -> pipeline.everything(asker));
     }
 
     @GetMapping("/{id}")
-    public ViewDeal.DealDetail one(@PathVariable("id") UUID dealId) {
-        return detail.handle(dealId);
+    public ViewDeal.DealDetail one(@PathVariable("id") UUID dealId,
+                                   @AuthenticationPrincipal SignedInUser caller) {
+        return detail.handle(dealId, caller.id().value());
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public DealView create(@Valid @RequestBody DealRequests.NewDealRequest request,
                            @AuthenticationPrincipal SignedInUser caller) {
-        UUID owner = Optional.ofNullable(request.ownerId()).orElseGet(() -> caller.id().value());
+        UUID creator = caller.id().value();
+        UUID owner = Optional.ofNullable(request.ownerId()).orElse(creator);
         return creation.handle(new CreateDeal.NewDeal(request.title(), request.companyId(),
-                owner, request.value(), request.currency(), request.probability()));
+                owner, creator, request.value(), request.currency(), request.probability()));
     }
 
     @PatchMapping("/{id}/stage")

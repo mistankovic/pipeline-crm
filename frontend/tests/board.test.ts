@@ -13,6 +13,7 @@ function deal(overrides: Partial<DealView> = {}): DealView {
     stage: 'LEAD',
     weightedValue: { amount: 500, currency: 'EUR' },
     allowedTransitions: ['QUALIFIED', 'CLOSED_LOST'],
+    youMayChangeThis: true,
     ...overrides
   };
 }

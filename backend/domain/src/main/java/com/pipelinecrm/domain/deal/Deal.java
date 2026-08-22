@@ -97,9 +97,28 @@ public final class Deal {
         return terms.probability();
     }
 
-    /** The stages this deal could legally move to right now. */
+    /** The stages this deal could legally move to right now, for anybody entitled to move it. */
     public List<DealStage> allowedTransitions() {
         return Arrays.stream(DealStage.values()).filter(stage::allowsTransitionTo).toList();
+    }
+
+    /**
+     * The stages <em>this user</em> may move it to right now — which is nothing at all if they
+     * are neither the owner nor a manager.
+     *
+     * <p>The two questions are different, and confusing them showed on screen: a board built
+     * from {@link #allowedTransitions()} invited a rival salesperson to drag a card the server
+     * would then refuse. See docs/reviews/stage-6-review.md, finding F-6.2.
+     */
+    public List<DealStage> transitionsAllowedFor(User actor) {
+        Guard.present(actor, "user asking what they may do");
+        return mayBeChangedBy(actor) ? allowedTransitions() : List.of();
+    }
+
+    /** Whether this user may change anything about this deal at all. */
+    public boolean mayBeChangedBy(User actor) {
+        Guard.present(actor, "user asking what they may do");
+        return actor.isManager() || parties.ownedBy(actor.id());
     }
 
     /**
@@ -109,7 +128,7 @@ public final class Deal {
      */
     private void requireAuthority(User actor) {
         Guard.present(actor, "user changing the deal");
-        if (!actor.isManager() && !parties.ownedBy(actor.id())) {
+        if (!mayBeChangedBy(actor)) {
             throw new StageChangeForbidden(actor.id());
         }
     }

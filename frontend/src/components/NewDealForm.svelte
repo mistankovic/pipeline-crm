@@ -1,5 +1,6 @@
 <script lang="ts">
   import ErrorBanner from './ErrorBanner.svelte';
+  import { Failures } from '../lib/failures.svelte';
   import { session } from '../lib/session.svelte';
   import type { CompanyView, UserView } from '../lib/types';
 
@@ -12,22 +13,20 @@
   let value = $state(10000);
   let currency = $state('EUR');
   let probability = $state(50);
-  let failure = $state<unknown>(null);
+  const failures = new Failures();
 
   $effect(() => {
-    session.api
-      .companies()
-      .then((found) => {
-        companies = found;
-        companyId = companyId || (found[0]?.id ?? '');
-      })
-      .catch((refused) => (failure = refused));
+    void failures.attempt(async () => {
+      const found = await session.api.companies();
+      companies = found;
+      companyId = companyId || (found[0]?.id ?? '');
+    });
   });
 
   async function submit(event: Event) {
     event.preventDefault();
-    failure = null;
-    try {
+    let created = false;
+    await failures.attempt(async () => {
       await session.api.createDeal({
         title,
         companyId,
@@ -36,16 +35,17 @@
         currency,
         probability
       });
+      created = true;
+    });
+    if (created) {
       title = '';
       oncreated();
-    } catch (refused) {
-      failure = refused;
     }
   }
 </script>
 
 <form class="card new-deal" onsubmit={submit} data-testid="new-deal-form">
-  <ErrorBanner {failure} />
+  <ErrorBanner failure={failures.failure} />
   <div class="fields">
     <label>
       <span>Title</span>
