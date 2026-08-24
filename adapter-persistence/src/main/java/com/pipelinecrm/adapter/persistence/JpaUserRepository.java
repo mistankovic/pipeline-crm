@@ -6,6 +6,7 @@ import com.pipelinecrm.application.port.out.UserRepository;
 import com.pipelinecrm.domain.identity.Email;
 import com.pipelinecrm.domain.identity.UserId;
 import com.pipelinecrm.domain.user.User;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,12 @@ public class JpaUserRepository implements UserRepository {
     @Transactional(readOnly = true)
     public Optional<User> findByEmail(Email email) {
         return users.findByEmail(email.value()).map(UserMapper::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findAll() {
+        return users.findAll().stream().map(UserMapper::toDomain).toList();
     }
 
     @Override

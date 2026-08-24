@@ -153,6 +153,9 @@ class UseCaseTest {
                         DealStage.QUALIFIED)))
                 .isInstanceOf(NotFoundException.class);
         assertThatThrownBy(() -> loginMissingUser()).isInstanceOf(NotFoundException.class);
+        assertThat(new ListUsersService(users).execute())
+                .extracting(com.pipelinecrm.application.port.in.ListUsersUseCase.PublicUser::email)
+                .containsExactly("ada@example.com");
     }
 
     @Test

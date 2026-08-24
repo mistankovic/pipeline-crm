@@ -4,6 +4,7 @@ import com.pipelinecrm.application.port.out.UserRepository;
 import com.pipelinecrm.domain.identity.Email;
 import com.pipelinecrm.domain.identity.UserId;
 import com.pipelinecrm.domain.user.User;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +22,11 @@ public final class InMemoryUserRepository implements UserRepository {
     @Override
     public Optional<User> findByEmail(Email email) {
         return Optional.ofNullable(byEmail.get(email));
+    }
+
+    @Override
+    public List<User> findAll() {
+        return List.copyOf(byId.values());
     }
 
     @Override
