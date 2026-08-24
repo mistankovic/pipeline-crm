@@ -31,7 +31,7 @@
     <jacoco.version>0.8.13</jacoco.version>
     <pitest.version>1.19.6</pitest.version>
     <pitest.junit5.version>1.2.2</pitest.junit5.version>
-    <jst.version>3.5.3</jst.version>
+    <jst.version>3.5.4</jst.version>
     <compiler.plugin.version>3.14.0</compiler.plugin.version>
     <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
     <exec.plugin.version>3.5.0</exec.plugin.version>
