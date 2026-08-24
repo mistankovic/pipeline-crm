@@ -55,7 +55,7 @@
         <executions>
           <execution>
             <id>cucumber-junit-xml-gate</id>
-            <phase>verify</phase>
+            <phase>test</phase>
             <goals>
               <goal>java</goal>
             </goals>
