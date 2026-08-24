@@ -108,6 +108,13 @@ class UseCaseTest {
         assertThat(viewDeal.execute(dealId).deal().title().value()).isEqualTo("Renamed");
         assertThat(viewDeal.execute(dealId).deal().value().amount()).isEqualByComparingTo("80.00");
         assertThat(viewDeal.execute(dealId).deal().probability().percent()).isEqualTo(20);
+        recordActivity.execute(new RecordActivityUseCase.Command(ownerId, ActivityType.MEETING, "hi", dealId, null));
+        changeStage.execute(new ChangeDealStageUseCase.Command(ownerId, dealId, DealStage.CLOSED_WON));
+        String closedTitle = viewDeal.execute(dealId).deal().title().value();
+        assertThatThrownBy(() -> updateDeal.execute(new UpdateDealUseCase.Command(
+                        ownerId, dealId, "Hacked", Money.of("1.00", "USD"), Probability.of(1))))
+                .isInstanceOf(com.pipelinecrm.domain.deal.IllegalDealStageException.class);
+        assertThat(viewDeal.execute(dealId).deal().title().value()).isEqualTo(closedTitle);
     }
 
     @Test

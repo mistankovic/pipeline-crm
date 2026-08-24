@@ -16,9 +16,9 @@ public final class UpdateDealService implements UpdateDealUseCase {
     @Override
     public void execute(Command command) {
         Deal deal = deals.findById(command.dealId()).orElseThrow(() -> new NotFoundException("deal"));
-        deal.rename(DealTitle.of(command.title()));
         deal.revalue(command.value());
         deal.changeProbability(command.probability());
+        deal.rename(DealTitle.of(command.title()));
         deals.save(deal);
     }
 }
