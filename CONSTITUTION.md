@@ -49,6 +49,10 @@ to use-case implementations.
 
 ### 2.2 Forbidden in `domain` and `application` (compile + bytecode)
 
+Architecture tests import each module’s `target/classes` (not a package prefix)
+and require every production class to reside in that module’s package root.
+Off-package types in a module fail `./mvnw verify`.
+
 These package prefixes are illegal in inner-layer production code:
 
 - `org.springframework..`
@@ -61,8 +65,20 @@ These package prefixes are illegal in inner-layer production code:
 - `org.springframework.boot..`
 - `org.mockito..` (production code; tests may mock ports)
 - `org.projectlombok..`
+- `javax.persistence..`, `javax.servlet..`, `javax.ws.rs..`, `javax.ejb..`
 
-Lombok is banned in **every** module. Generate nothing that hides structure.
+Inner-layer ArchUnit allowlists `java..` plus explicit JDK `javax.*` namespaces
+(`crypto`, `net`, `security`, `sql`, `naming`, `management`, `xml`,
+`annotation.processing`, `lang.model`, `tools`, `transaction.xa`, `imageio`,
+`print`, `sound`, `script`, `swing`, `accessibility`). Blanket `javax..` is
+illegal because it includes Java EE.
+
+Lombok is banned in **every** module (root enforcer + ArchUnit). Generate
+nothing that hides structure.
+
+Inner-layer and `crap-check` Maven enforcer uses an **allowlist**: every
+artifact except the JDK-implied test tools (JUnit, AssertJ, ArchUnit, their
+transitives, `crap-check`, and `domain` for `application`) is banned.
 
 ### 2.3 Ports
 
@@ -178,7 +194,7 @@ for UX, but the server remains the authority.
 
 - Java 21. `maven.compiler.release=21`. No preview features.
 - Indentation and charset: `.editorconfig`.
-- No wildcard imports.
+- No wildcard imports (`maven-checkstyle-plugin` `AvoidStarImport` on `verify`).
 - Tests: Arrange-Act-Assert. AssertJ fluent assertions.
 - Gherkin: business language, not UI clicks, not Java method names.
 

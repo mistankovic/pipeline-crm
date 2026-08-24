@@ -44,7 +44,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS; Linux: point at JD
 ./mvnw verify
 
 cd frontend
-npm install
+npm ci
 npm run build
 ```
 

@@ -19,6 +19,41 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>ban-non-jdk-artifacts-on-crap-check</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <searchTransitive>true</searchTransitive>
+                  <message>crap-check may depend only on the JDK plus documented test tools (CONSTITUTION.md §2.1).</message>
+                  <excludes>
+                    <exclude>*:*</exclude>
+                  </excludes>
+                  <includes>
+                    <include>org.junit.jupiter:*</include>
+                    <include>org.junit.platform:*</include>
+                    <include>org.assertj:*</include>
+                    <include>com.tngtech.archunit:*</include>
+                    <include>org.slf4j:*</include>
+                    <include>org.ow2.asm:*</include>
+                    <include>net.bytebuddy:*</include>
+                    <include>org.apiguardian:*</include>
+                    <include>org.opentest4j:*</include>
+                    <include>org.hamcrest:*</include>
+                  </includes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <version>3.4.2</version>
         <configuration>
@@ -72,7 +107,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>java</executable>
+              <executable>${java.home}/bin/java</executable>
               <classpathScope>test</classpathScope>
               <arguments>
                 <argument>-classpath</argument>
@@ -84,8 +119,6 @@
                 <argument>${crap.threshold}</argument>
                 <argument>--classes-dir</argument>
                 <argument>${project.build.outputDirectory}</argument>
-                <argument>--package</argument>
-                <argument>com.pipelinecrm.tools.crap</argument>
               </arguments>
             </configuration>
           </execution>

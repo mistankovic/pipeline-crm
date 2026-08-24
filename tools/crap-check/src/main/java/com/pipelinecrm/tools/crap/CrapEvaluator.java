@@ -30,6 +30,9 @@ public final class CrapEvaluator {
     }
 
     private static boolean inPackages(String packageName, Collection<String> packagePrefixes) {
+        if (packagePrefixes.isEmpty()) {
+            return true;
+        }
         for (String prefix : packagePrefixes) {
             if (matchesPrefix(packageName, prefix)) {
                 return true;
@@ -48,8 +51,5 @@ public final class CrapEvaluator {
 
     private static void requirePrefixes(Collection<String> packagePrefixes) {
         Require.notNull(packagePrefixes, "packagePrefixes");
-        if (packagePrefixes.isEmpty()) {
-            throw new IllegalArgumentException("at least one package prefix is required");
-        }
     }
 }

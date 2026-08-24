@@ -64,6 +64,15 @@ class CrapGateTest {
     }
 
     @Test
+    void withoutPackageFilterChecksEveryExecutableMethodInTheReport() {
+        Streams streams = new Streams();
+        Path report = JacocoReportParserTest.resource("jacoco-sample.xml");
+        int code = streams.gate().run(new String[] {"--report", report.toString()});
+        assertThat(code).isEqualTo(CrapGate.EXIT_VIOLATION);
+        assertThat(streams.out()).contains("noise");
+    }
+
+    @Test
     void failsWhenMethodExceedsThreshold() {
         Streams streams = new Streams();
         Path report = JacocoReportParserTest.resource("jacoco-violation.xml");

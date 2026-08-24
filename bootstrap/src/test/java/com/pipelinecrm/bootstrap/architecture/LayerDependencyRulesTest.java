@@ -1,23 +1,43 @@
 package com.pipelinecrm.bootstrap.architecture;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.core.importer.ImportOption;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class LayerDependencyRulesTest {
 
     private static final JavaClasses PROJECT = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.pipelinecrm");
+            .importPaths(
+                    Path.of("../domain/target/classes"),
+                    Path.of("../application/target/classes"),
+                    Path.of("../adapter-persistence/target/classes"),
+                    Path.of("../adapter-web/target/classes"),
+                    Path.of("target/classes"));
 
     @Test
-    void production_packages_are_present() {
+    void production_bytecode_is_present() {
         assertThat(PROJECT).isNotEmpty();
+    }
+
+    @Test
+    void every_production_class_lives_in_a_declared_layer_package() {
+        classes()
+                .should()
+                .resideInAnyPackage(
+                        "com.pipelinecrm.domain..",
+                        "com.pipelinecrm.application..",
+                        "com.pipelinecrm.adapter.persistence..",
+                        "com.pipelinecrm.adapter.web..",
+                        "com.pipelinecrm.bootstrap..")
+                .because("CONSTITUTION.md §2.1: module output may not contain off-layer packages")
+                .check(PROJECT);
     }
 
     @Test
@@ -71,6 +91,16 @@ class LayerDependencyRulesTest {
                 .should()
                 .beFreeOfCycles()
                 .because("CONSTITUTION.md §2.1: web and persistence adapters are independent")
+                .check(PROJECT);
+    }
+
+    @Test
+    void bootstrap_must_not_use_lombok() {
+        noClasses()
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage("org.projectlombok..")
+                .because("CONSTITUTION.md §2.2: Lombok is banned in every module")
                 .check(PROJECT);
     }
 }

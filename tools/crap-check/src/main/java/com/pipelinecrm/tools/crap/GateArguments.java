@@ -97,9 +97,6 @@ public final class GateArguments {
             if (report == null) {
                 throw new IllegalArgumentException("--report is required");
             }
-            if (packages.isEmpty()) {
-                throw new IllegalArgumentException("at least one --package is required");
-            }
             return new GateArguments(report, classesDir, threshold, packages);
         }
 

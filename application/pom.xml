@@ -16,9 +16,25 @@
   <description>Use cases and inbound/outbound ports</description>
 
   <properties>
-    <crap.package.prefix>com.pipelinecrm.application</crap.package.prefix>
     <pitest.target.classes>com.pipelinecrm.application.*</pitest.target.classes>
   </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 
   <dependencies>
     <dependency>

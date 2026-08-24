@@ -52,9 +52,7 @@ class GateArgumentsTest {
         assertThatThrownBy(() -> GateArguments.parse(new String[] {"--package", "p"}))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("--report");
-        assertThatThrownBy(() -> GateArguments.parse(new String[] {"--report", "r.xml"}))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("--package");
+        assertThat(GateArguments.parse(new String[] {"--report", "r.xml"}).packages()).isEmpty();
         assertThatThrownBy(() -> GateArguments.parse(new String[] {"--report", "r.xml", "--threshold"}))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> GateArguments.parse(new String[] {"--report", "r.xml", "--classes-dir"}))

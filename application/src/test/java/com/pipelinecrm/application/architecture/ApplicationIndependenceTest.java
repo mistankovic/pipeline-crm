@@ -6,18 +6,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.core.importer.ImportOption;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class ApplicationIndependenceTest {
 
-    private static final JavaClasses APPLICATION = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.pipelinecrm.application");
+    private static final JavaClasses APPLICATION = new ClassFileImporter().importPath(Path.of("target/classes"));
 
     @Test
-    void production_package_is_present() {
+    void production_bytecode_is_present() {
         assertThat(APPLICATION).isNotEmpty();
+    }
+
+    @Test
+    void every_production_class_lives_in_the_application_package() {
+        classes()
+                .should()
+                .resideInAPackage("com.pipelinecrm.application..")
+                .because("CONSTITUTION.md §2.1: the application module maps to com.pipelinecrm.application")
+                .check(APPLICATION);
     }
 
     @Test
@@ -32,8 +39,13 @@ class ApplicationIndependenceTest {
                         "jakarta.persistence..",
                         "jakarta.servlet..",
                         "jakarta.ws.rs..",
+                        "javax.persistence..",
+                        "javax.servlet..",
+                        "javax.ws.rs..",
+                        "javax.ejb..",
                         "org.hibernate..",
                         "com.fasterxml.jackson..",
+                        "org.mockito..",
                         "org.projectlombok..")
                 .because("CONSTITUTION.md §2: use cases depend on domain, not frameworks")
                 .check(APPLICATION);
@@ -58,7 +70,23 @@ class ApplicationIndependenceTest {
                         "com.pipelinecrm.application..",
                         "com.pipelinecrm.domain..",
                         "java..",
-                        "javax..")
+                        "javax.crypto..",
+                        "javax.net..",
+                        "javax.security..",
+                        "javax.sql..",
+                        "javax.naming..",
+                        "javax.management..",
+                        "javax.xml..",
+                        "javax.annotation.processing..",
+                        "javax.lang.model..",
+                        "javax.tools..",
+                        "javax.transaction.xa..",
+                        "javax.imageio..",
+                        "javax.print..",
+                        "javax.sound..",
+                        "javax.script..",
+                        "javax.swing..",
+                        "javax.accessibility..")
                 .because("CONSTITUTION.md §2.1: application compile-time dependencies are domain + JDK")
                 .check(APPLICATION);
     }

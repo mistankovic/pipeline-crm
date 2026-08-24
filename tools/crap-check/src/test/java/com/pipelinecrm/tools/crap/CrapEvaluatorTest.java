@@ -42,6 +42,14 @@ class CrapEvaluatorTest {
     }
 
     @Test
+    void emptyPrefixesCheckEveryExecutableMethod() {
+        MethodCoverage otherPackage = new MethodCoverage("com.other", "com/other/X", "m", "()V", 1, 1, 0);
+        CrapReport report = evaluator.evaluate(List.of(otherPackage), 6.0, List.of());
+        assertThat(report.checkedMethodCount()).isEqualTo(1);
+        assertThat(report.passed()).isTrue();
+    }
+
+    @Test
     void doesNotTreatSiblingPackageAsMatch() {
         MethodCoverage sibling = new MethodCoverage(
                 "com.pipelinecrm.domainx", "com/pipelinecrm/domainx/X", "m", "()V", 1, 1, 0);
@@ -52,8 +60,6 @@ class CrapEvaluatorTest {
     @Test
     void rejectsNullInputs() {
         assertThatThrownBy(() -> evaluator.evaluate(null, 6.0, List.of("p")))
-                .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> evaluator.evaluate(List.of(), 6.0, List.of()))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> evaluator.evaluate(List.of(), 6.0, null)).isInstanceOf(IllegalArgumentException.class);
     }
