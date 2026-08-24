@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report name="domain">
+  <package name="com/pipelinecrm/domain">
+    <class name="com/pipelinecrm/domain/Deal" sourcefilename="Deal.java">
+      <method name="advance" desc="()V" line="10">
+        <counter type="LINE" missed="nope" covered="1"/>
+        <counter type="COMPLEXITY" missed="0" covered="1"/>
+      </method>
+    </class>
+  </package>
+</report>

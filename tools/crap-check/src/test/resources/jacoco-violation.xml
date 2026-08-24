@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report name="domain">
+  <package name="com/pipelinecrm/domain">
+    <class name="com/pipelinecrm/domain/Deal" sourcefilename="Deal.java">
+      <method name="advance" desc="()V" line="10">
+        <counter type="LINE" missed="5" covered="5"/>
+        <counter type="COMPLEXITY" missed="3" covered="2"/>
+      </method>
+      <method name="blankCounters" desc="()V" line="40">
+        <counter type="LINE" missed="" covered=""/>
+        <counter type="COMPLEXITY" missed="" covered=""/>
+      </method>
+    </class>
+  </package>
+</report>
