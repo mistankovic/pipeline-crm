@@ -9,7 +9,7 @@ These steps exercise the **real Svelte UI** against the public REST API. They do
 | sales@pipelinecrm.demo | password | SALES |
 | manager@pipelinecrm.demo | password | MANAGER |
 
-**Start (local):** Postgres on `5432` (`pipelinecrm`/`pipelinecrm`/`pipelinecrm`), backend on `8080`, frontend `npm run dev` on `5173` (Vite proxies `/api`).
+**Start:** `docker compose up --build` and open http://localhost:8081, **or** local Postgres + backend `:8080` + `cd frontend && npm run dev` (Vite `:5173` proxies `/api`).
 
 Expected: each step’s **Pass** column holds after a human (or the browser session recorded in Stage 6) follows it.
 

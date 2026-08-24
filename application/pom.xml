@@ -60,6 +60,7 @@
               <goal>java</goal>
             </goals>
             <configuration>
+              <skip>${skipTests}</skip>
               <classpathScope>test</classpathScope>
               <mainClass>com.pipelinecrm.application.acceptance.CucumberJunitXmlGate</mainClass>
               <arguments>

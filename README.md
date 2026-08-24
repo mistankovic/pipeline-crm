@@ -45,7 +45,7 @@ docker compose up --build
 
 - UI: http://localhost:8081
 - API: http://localhost:8080
-- Postgres: localhost:5432 (`pipelinecrm` / `pipelinecrm` / `pipelinecrm`)
+- Postgres is internal to the Compose network (`postgres:5432`). It is not published on the host.
 
 Demo login:
 
