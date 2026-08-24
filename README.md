@@ -54,7 +54,7 @@ Demo login:
 | sales@pipelinecrm.demo | password | SALES |
 | manager@pipelinecrm.demo | password | MANAGER |
 
-Local (without Compose): start Postgres with those credentials, then
+Local (without Compose): run PostgreSQL 16 on `localhost:5432` with database/user/password `pipelinecrm`, then
 
 ```bash
 ./mvnw -pl bootstrap -am package -DskipTests
