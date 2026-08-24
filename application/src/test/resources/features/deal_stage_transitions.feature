@@ -50,16 +50,28 @@ Feature: Deal stage transitions
 
   Scenario Outline: a closed deal cannot leave a terminal stage
     Given the deal is in stage <closed>
-    When the owner moves the deal to LEAD
+    When the owner moves the deal to <to>
     Then the change is rejected as an illegal stage transition
     And the deal stage is still <closed>
 
     Examples:
-      | closed      |
-      | CLOSED_WON  |
-      | CLOSED_LOST |
+      | closed      | to          |
+      | CLOSED_WON  | LEAD        |
+      | CLOSED_WON  | QUALIFIED   |
+      | CLOSED_WON  | CLOSED_LOST |
+      | CLOSED_WON  | CLOSED_WON  |
+      | CLOSED_LOST | LEAD        |
+      | CLOSED_LOST | CLOSED_WON  |
+      | CLOSED_LOST | CLOSED_LOST |
 
-  Scenario: staying in the same stage is not a transition
-    Given the deal is in stage QUALIFIED
-    When the owner moves the deal to QUALIFIED
+  Scenario Outline: staying in the same open stage is not a transition
+    Given the deal is in stage <stage>
+    When the owner moves the deal to <stage>
     Then the change is rejected as an illegal stage transition
+
+    Examples:
+      | stage       |
+      | LEAD        |
+      | QUALIFIED   |
+      | PROPOSAL    |
+      | NEGOTIATION |

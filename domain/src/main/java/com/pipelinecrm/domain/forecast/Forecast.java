@@ -16,28 +16,37 @@ public final class Forecast {
     private Forecast() {}
 
     public static List<ForecastBucket> byOwner(Collection<Deal> deals, Currency currency) {
-        Guards.notNull(currency, "currency");
-        Map<UserId, WeightedValue> totals = emptyOwnerTotals(openDeals(deals));
+        List<Deal> open = openDealsIn(deals, currency);
+        Map<UserId, WeightedValue> totals = emptyOwnerTotals(open);
         return toOwnerBuckets(totals);
     }
 
     public static List<ForecastBucket> byStage(Collection<Deal> deals, Currency currency) {
+        List<Deal> open = openDealsIn(deals, currency);
         Map<DealStage, WeightedValue> totals = emptyStageTotals(currency);
-        for (Deal deal : openDeals(deals)) {
+        for (Deal deal : open) {
             addStage(totals, deal);
         }
         return toStageBuckets(totals);
     }
 
-    private static List<Deal> openDeals(Collection<Deal> deals) {
+    private static List<Deal> openDealsIn(Collection<Deal> deals, Currency currency) {
+        Guards.notNull(currency, "currency");
         Guards.notNull(deals, "deals");
         List<Deal> open = new ArrayList<>();
         for (Deal deal : deals) {
             if (deal.isOpen()) {
+                requireCurrency(deal, currency);
                 open.add(deal);
             }
         }
         return open;
+    }
+
+    private static void requireCurrency(Deal deal, Currency currency) {
+        if (!deal.value().currency().equals(currency)) {
+            throw new MixedCurrencyException();
+        }
     }
 
     private static Map<UserId, WeightedValue> emptyOwnerTotals(List<Deal> open) {

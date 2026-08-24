@@ -37,23 +37,24 @@ class DealTest {
     @Test
     void ownerCanWalkTheHappyPath() {
         Deal deal = openDeal();
-        deal.changeStage(owner, DealStage.QUALIFIED, List.of());
-        deal.changeStage(owner, DealStage.PROPOSAL, List.of());
-        deal.changeStage(owner, DealStage.NEGOTIATION, List.of());
+        deal.changeStage(owner, DealStage.QUALIFIED);
+        deal.changeStage(owner, DealStage.PROPOSAL);
+        deal.changeStage(owner, DealStage.NEGOTIATION);
         assertThat(deal.stage()).isEqualTo(DealStage.NEGOTIATION);
     }
 
     @Test
     void skippingAHappyPathStageIsRejected() {
         Deal deal = openDeal();
-        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.PROPOSAL, List.of()))
+        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.PROPOSAL))
                 .isInstanceOf(IllegalDealStageException.class);
     }
 
     @Test
     void closedWonRequiresPositiveValueAndQualifyingActivity() {
         Deal deal = openDeal();
-        deal.changeStage(owner, DealStage.CLOSED_WON, List.of(meetingOn(deal.id())));
+        deal.recordActivity(meetingOn(deal.id()));
+        deal.changeStage(owner, DealStage.CLOSED_WON);
         assertThat(deal.stage()).isEqualTo(DealStage.CLOSED_WON);
         assertThat(deal.probability().percent()).isEqualTo(100);
         assertThat(deal.isOpen()).isFalse();
@@ -62,14 +63,16 @@ class DealTest {
     @Test
     void callAlsoQualifiesClosedWon() {
         Deal deal = openDeal();
-        deal.changeStage(owner, DealStage.CLOSED_WON, List.of(callOn(deal.id())));
+        deal.recordActivity(callOn(deal.id()));
+        deal.changeStage(owner, DealStage.CLOSED_WON);
         assertThat(deal.stage()).isEqualTo(DealStage.CLOSED_WON);
     }
 
     @Test
     void noteDoesNotQualifyClosedWon() {
         Deal deal = openDeal();
-        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON, List.of(noteOn(deal.id()))))
+        deal.recordActivity(noteOn(deal.id()));
+        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON))
                 .isInstanceOf(DealNotWinnableException.class)
                 .hasMessageContaining("call or meeting");
     }
@@ -77,7 +80,9 @@ class DealTest {
     @Test
     void activityOnAnotherDealDoesNotQualify() {
         Deal deal = openDeal();
-        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON, List.of(meetingOn(DealId.generate()))))
+        assertThatThrownBy(() -> deal.recordActivity(meetingOn(DealId.generate())))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON))
                 .isInstanceOf(DealNotWinnableException.class);
     }
 
@@ -91,7 +96,8 @@ class DealTest {
                 ActivityTarget.contact(ContactId.generate()),
                 ownerId,
                 Instant.parse("2026-01-01T10:00:00Z"));
-        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON, List.of(contactMeeting)))
+        assertThatThrownBy(() -> deal.recordActivity(contactMeeting)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON))
                 .isInstanceOf(DealNotWinnableException.class);
     }
 
@@ -104,7 +110,8 @@ class DealTest {
                 DealTitle.of("Zero"),
                 Money.of("0.00", "USD"),
                 Probability.of(10));
-        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON, List.of(meetingOn(deal.id()))))
+        deal.recordActivity(meetingOn(deal.id()));
+        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.CLOSED_WON))
                 .isInstanceOf(DealNotWinnableException.class)
                 .hasMessageContaining("positive");
     }
@@ -112,7 +119,7 @@ class DealTest {
     @Test
     void closedLostForcesProbabilityToZero() {
         Deal deal = openDeal();
-        deal.changeStage(owner, DealStage.CLOSED_LOST, List.of());
+        deal.changeStage(owner, DealStage.CLOSED_LOST);
         assertThat(deal.stage()).isEqualTo(DealStage.CLOSED_LOST);
         assertThat(deal.probability().percent()).isZero();
     }
@@ -120,22 +127,22 @@ class DealTest {
     @Test
     void managerMayChangeSomeoneElsesStage() {
         Deal deal = openDeal();
-        deal.changeStage(manager, DealStage.QUALIFIED, List.of());
+        deal.changeStage(manager, DealStage.QUALIFIED);
         assertThat(deal.stage()).isEqualTo(DealStage.QUALIFIED);
     }
 
     @Test
     void otherSalesCannotChangeStage() {
         Deal deal = openDeal();
-        assertThatThrownBy(() -> deal.changeStage(otherSales, DealStage.QUALIFIED, List.of()))
+        assertThatThrownBy(() -> deal.changeStage(otherSales, DealStage.QUALIFIED))
                 .isInstanceOf(DealStageNotAuthorizedException.class);
     }
 
     @Test
     void terminalDealCannotMoveAgain() {
         Deal deal = openDeal();
-        deal.changeStage(owner, DealStage.CLOSED_LOST, List.of());
-        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.LEAD, List.of()))
+        deal.changeStage(owner, DealStage.CLOSED_LOST);
+        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.LEAD))
                 .isInstanceOf(IllegalDealStageException.class);
         assertThatThrownBy(() -> deal.changeProbability(Probability.of(10)))
                 .isInstanceOf(IllegalDealStageException.class);
@@ -163,7 +170,8 @@ class DealTest {
                 DealTitle.of("Restored"),
                 Money.of("5.00", "USD"),
                 Probability.of(20),
-                DealStage.PROPOSAL);
+                DealStage.PROPOSAL,
+                List.of());
         assertThat(deal.id()).isEqualTo(id);
         assertThat(deal.companyId()).isEqualTo(companyId);
         assertThat(deal.stage()).isEqualTo(DealStage.PROPOSAL);
@@ -172,11 +180,65 @@ class DealTest {
     @Test
     void rejectsNullCollaborators() {
         Deal deal = openDeal();
-        assertThatThrownBy(() -> deal.changeStage(null, DealStage.QUALIFIED, List.of()))
+        assertThatThrownBy(() -> deal.changeStage(null, DealStage.QUALIFIED))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> deal.changeStage(owner, null, List.of())).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> deal.changeStage(owner, DealStage.QUALIFIED, null))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> deal.changeStage(owner, null)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void recordedActivitiesAreVisible() {
+        Deal deal = openDeal();
+        deal.recordActivity(meetingOn(deal.id()));
+        assertThat(deal.activities()).hasSize(1);
+        assertThat(deal.activities().getFirst().qualifiesDealWin(deal.id())).isTrue();
+    }
+
+    @Test
+    void restoreClosedWonWithoutMeetingIsRejected() {
+        assertThatThrownBy(() -> Deal.restore(
+                        DealId.generate(),
+                        CompanyId.generate(),
+                        ownerId,
+                        DealTitle.of("Won"),
+                        Money.of("10.00", "USD"),
+                        Probability.closedWon(),
+                        DealStage.CLOSED_WON,
+                        List.of()))
+                .isInstanceOf(DealNotWinnableException.class);
+    }
+
+    @Test
+    void restoreRejectsIllegalClosedWon() {
+        assertThatThrownBy(() -> Deal.restore(
+                        DealId.generate(),
+                        CompanyId.generate(),
+                        ownerId,
+                        DealTitle.of("Bad"),
+                        Money.of("0.00", "USD"),
+                        Probability.closedWon(),
+                        DealStage.CLOSED_WON,
+                        List.of(meetingOn(DealId.generate()))))
+                .isInstanceOf(RuntimeException.class);
+        DealId id = DealId.generate();
+        assertThatThrownBy(() -> Deal.restore(
+                        id,
+                        CompanyId.generate(),
+                        ownerId,
+                        DealTitle.of("Bad"),
+                        Money.of("10.00", "USD"),
+                        Probability.of(25),
+                        DealStage.CLOSED_WON,
+                        List.of(meetingOn(id))))
+                .isInstanceOf(IllegalDealStageException.class);
+    }
+
+    @Test
+    void closedDealLocksValue() {
+        Deal deal = openDeal();
+        deal.recordActivity(meetingOn(deal.id()));
+        deal.changeStage(owner, DealStage.CLOSED_WON);
+        assertThatThrownBy(() -> deal.revalue(Money.of("1.00", "USD")))
+                .isInstanceOf(IllegalDealStageException.class);
     }
 
     private Deal openDeal() {

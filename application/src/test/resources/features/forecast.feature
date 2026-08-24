@@ -28,3 +28,14 @@ Feature: Open-deal forecast
   Scenario: an empty pipeline has no owner buckets
     When the forecast is grouped by owner in USD
     Then there are no owner forecast buckets
+
+  Scenario: mixed currencies are rejected
+    Given "alice" owns an open deal worth 1000 USD at probability 50
+    And "bob" owns an open deal worth 200 EUR at probability 25
+    When the forecast is grouped by owner in USD
+    Then the forecast is rejected as mixed currency
+
+  Scenario: requesting a currency none of the open deals use is rejected
+    Given "alice" owns an open deal worth 1000 USD at probability 50
+    When the forecast is grouped by owner in EUR
+    Then the forecast is rejected as mixed currency

@@ -3,14 +3,20 @@ package com.pipelinecrm.domain.forecast;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.pipelinecrm.domain.activity.Activity;
+import com.pipelinecrm.domain.activity.ActivityBody;
+import com.pipelinecrm.domain.activity.ActivityTarget;
+import com.pipelinecrm.domain.activity.ActivityType;
 import com.pipelinecrm.domain.deal.Deal;
 import com.pipelinecrm.domain.deal.DealStage;
 import com.pipelinecrm.domain.deal.DealTitle;
 import com.pipelinecrm.domain.deal.Money;
 import com.pipelinecrm.domain.deal.Probability;
+import com.pipelinecrm.domain.identity.ActivityId;
 import com.pipelinecrm.domain.identity.CompanyId;
 import com.pipelinecrm.domain.identity.DealId;
 import com.pipelinecrm.domain.identity.UserId;
+import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -67,15 +73,46 @@ class ForecastTest {
         assertThatThrownBy(() -> usd.plus(eur)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    private static Deal deal(UserId owner, String amount, int probability, DealStage stage) {
-        return Deal.restore(
+    @Test
+    void mixedOpenCurrenciesAreRejected() {
+        UserId owner = UserId.generate();
+        Deal usd = deal(owner, "100.00", 10, DealStage.LEAD);
+        Deal eur = Deal.restore(
                 DealId.generate(),
                 CompanyId.generate(),
                 owner,
-                DealTitle.of("D"),
-                Money.of(amount, "USD"),
-                Probability.of(probability),
-                stage);
+                DealTitle.of("EU"),
+                Money.of("100.00", "EUR"),
+                Probability.of(10),
+                DealStage.LEAD,
+                List.of());
+        assertThatThrownBy(() -> Forecast.byOwner(List.of(usd, eur), USD)).isInstanceOf(MixedCurrencyException.class);
+        assertThatThrownBy(() -> Forecast.byStage(List.of(usd, eur), USD)).isInstanceOf(MixedCurrencyException.class);
+        assertThatThrownBy(() -> Forecast.byOwner(List.of(usd), Currency.getInstance("EUR")))
+                .isInstanceOf(MixedCurrencyException.class);
+    }
+
+    private static Deal deal(UserId owner, String amount, int probability, DealStage stage) {
+        DealId id = DealId.generate();
+        List<Activity> activities = List.of();
+        Probability stored = Probability.of(probability);
+        if (stage == DealStage.CLOSED_WON) {
+            stored = Probability.closedWon();
+            activities = List.of(meeting(id, owner));
+        } else if (stage == DealStage.CLOSED_LOST) {
+            stored = Probability.closedLost();
+        }
+        return Deal.restore(id, CompanyId.generate(), owner, DealTitle.of("D"), Money.of(amount, "USD"), stored, stage, activities);
+    }
+
+    private static Activity meeting(DealId dealId, UserId owner) {
+        return Activity.record(
+                ActivityId.generate(),
+                ActivityType.MEETING,
+                ActivityBody.of("win"),
+                ActivityTarget.deal(dealId),
+                owner,
+                Instant.parse("2026-01-01T00:00:00Z"));
     }
 
     private static ForecastBucket bucket(List<ForecastBucket> buckets, UserId owner) {

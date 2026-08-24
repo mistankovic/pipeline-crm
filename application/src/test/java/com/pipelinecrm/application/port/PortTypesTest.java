@@ -1,6 +1,7 @@
 package com.pipelinecrm.application.port;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.pipelinecrm.application.port.in.ChangeDealStageUseCase;
 import com.pipelinecrm.application.port.in.CreateCompanyUseCase;
@@ -46,6 +47,10 @@ class PortTypesTest {
                 .isEqualTo(DealStage.QUALIFIED);
         assertThat(new RecordActivityUseCase.Command(userId, ActivityType.NOTE, "hi", dealId, null).body())
                 .isEqualTo("hi");
+        assertThatThrownBy(() -> new RecordActivityUseCase.Command(userId, ActivityType.NOTE, "hi", null, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new RecordActivityUseCase.Command(userId, ActivityType.NOTE, "hi", dealId, contactId))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThat(new ViewDealUseCase.Result(null, List.of()).activities()).isEmpty();
         assertThat(new ListDealsUseCase.Filter(DealStage.LEAD, userId).stage()).isEqualTo(DealStage.LEAD);
         assertThat(new LoginUseCase.Command("a@b.com", "secret").email()).isEqualTo("a@b.com");

@@ -10,5 +10,11 @@ public interface RecordActivityUseCase {
 
     ActivityId execute(Command command);
 
-    record Command(UserId actorId, ActivityType type, String body, DealId dealId, ContactId contactId) {}
+    record Command(UserId actorId, ActivityType type, String body, DealId dealId, ContactId contactId) {
+        public Command {
+            if ((dealId == null) == (contactId == null)) {
+                throw new IllegalArgumentException("exactly one of dealId or contactId is required");
+            }
+        }
+    }
 }
