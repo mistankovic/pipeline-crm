@@ -60,6 +60,10 @@
                       <include>org.apiguardian:*</include>
                       <include>org.opentest4j:*</include>
                       <include>org.hamcrest:*</include>
+                      <include>io.cucumber:*</include>
+                      <include>org.mockito:*</include>
+                      <include>org.objenesis:*</include>
+                      <include>net.bytebuddy:*</include>
                     </includes>
                   </bannedDependencies>
                 </rules>
@@ -194,7 +198,7 @@
               <targetClasses>
                 <param>${pitest.target.classes}</param>
               </targetClasses>
-              <failWhenNoMutations>false</failWhenNoMutations>
+              <failWhenNoMutations>true</failWhenNoMutations>
               <mutationThreshold>100</mutationThreshold>
               <coverageThreshold>95</coverageThreshold>
               <timestampedReports>false</timestampedReports>
