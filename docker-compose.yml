@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pipelinecrm
+      POSTGRES_USER: pipelinecrm
+      POSTGRES_PASSWORD: pipelinecrm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipelinecrm -d pipelinecrm"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    # Postgres is only on the compose network. Use the backend port for the API.
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pipelinecrm
+      SPRING_DATASOURCE_USERNAME: pipelinecrm
+      SPRING_DATASOURCE_PASSWORD: pipelinecrm
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"

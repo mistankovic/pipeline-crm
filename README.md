@@ -7,8 +7,8 @@ Law of the repository: [`CONSTITUTION.md`](CONSTITUTION.md).
 
 ## Stack
 
-- Java 21, Maven, Spring Boot 3.5.x (wired from Stage 2)
-- PostgreSQL
+- Java 21, Maven, Spring Boot 3.5.x
+- PostgreSQL 16
 - Svelte 5 + TypeScript + Vite
 - JWT auth (demo only)
 
@@ -29,7 +29,7 @@ frontend               Svelte UI (consumes the public API only)
 
 - JDK **21** (not 22+). The build enforces `[21,22)`.
 - Node 22+ (frontend)
-- Docker (Testcontainers / later compose)
+- Docker (Testcontainers / Compose)
 
 macOS:
 
@@ -37,7 +37,34 @@ macOS:
 export JAVA_HOME="$(/usr/libexec/java_home -v 21)"
 ```
 
-## Build
+## How to run (Docker Compose)
+
+```bash
+docker compose up --build
+```
+
+- UI: http://localhost:8081
+- API: http://localhost:8080
+- Postgres: localhost:5432 (`pipelinecrm` / `pipelinecrm` / `pipelinecrm`)
+
+Demo login:
+
+| Email | Password | Role |
+| --- | --- | --- |
+| sales@pipelinecrm.demo | password | SALES |
+| manager@pipelinecrm.demo | password | MANAGER |
+
+Local (without Compose): start Postgres with those credentials, then
+
+```bash
+./mvnw -pl bootstrap -am package -DskipTests
+java -jar bootstrap/target/bootstrap-0.1.0-SNAPSHOT.jar
+cd frontend && npm ci && npm run dev
+```
+
+Vite proxies `/api` to `http://localhost:8080`.
+
+## Build and test
 
 ```bash
 export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS; Linux: point at JDK 21
@@ -46,42 +73,42 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS; Linux: point at JD
 cd frontend
 npm ci
 npm run build
+npm run check
 ```
 
 ### Quality commands
 
 | Gate | Command |
 | --- | --- |
-| Compile, unit/architecture tests, JaCoCo, CRAP | `./mvnw verify` |
+| Compile, unit/architecture/Gherkin tests, JaCoCo, CRAP | `./mvnw verify` |
 | Mutation testing (domain + application) | `./mvnw -Pmutation -pl domain,application -am verify` |
+| Persistence IT (Testcontainers Postgres) | included in `./mvnw verify` (`adapter-persistence`) |
 | Frontend production build | `cd frontend && npm run build` |
 | Frontend type-check | `cd frontend && npm run check` |
+| UI QA procedures | [`docs/qa/ui-procedures.md`](docs/qa/ui-procedures.md) |
 
-Default `verify` does **not** run PIT (too slow for every local change).
-Stage reviews and CI run `-Pmutation` once inner-layer production code exists.
+Default `verify` does **not** run PIT (too slow for every local change). CI and stage reviews run `-Pmutation`.
 
-## Current quality metrics
+## Quality metrics (Stage 7, `./mvnw -Pmutation -pl domain,application -am verify`)
 
-Stage 0 has no domain/use-case production methods yet. Inner-layer coverage,
-mutation score, and CRAP summaries will be published here from Stage 3 onward.
-
-| Metric | Target | Current (Stage 0) |
+| Metric | Target | Current |
 | --- | --- | --- |
-| Line coverage (`domain`, `application`) | ≥ 95% | n/a (no executable production methods) |
-| Branch coverage (`domain`, `application`) | ≥ 95% | n/a |
-| Mutation score (PIT, inner layers) | 100% | n/a (`failWhenNoMutations=false` until Stage 3) |
-| CRAP per method (inner layers) | ≤ 6 | n/a |
-
-## Running the app
-
-Application wiring, PostgreSQL, and JWT land in Stage 2+.
-Docker Compose for the full demo lands in Stage 8.
+| Domain line coverage | ≥ 95% | 334/335 (99.7%) |
+| Domain branch coverage | ≥ 95% | 91/92 (98.9%) |
+| Application line coverage | ≥ 95% | 134/134 (100%) |
+| Application branch coverage | ≥ 95% | 29/30 (96.7%) |
+| PIT mutation score (domain) | 100% | 140/140 killed |
+| PIT mutation score (application) | 100% | 54/54 killed |
+| CRAP per inner-layer method | ≤ 6 | 0 violations (137 domain + 54 application methods) |
+| Gherkin | all scenarios | 48 Surefire-counted scenarios |
 
 ## Tests
 
 - Unit + architecture: Maven Surefire during `verify`
-- Gherkin (from Stage 1/3): `application/src/test/resources/features`
-- QA UI procedures (Stage 7): `docs/qa/`
+- Gherkin: `application/src/test/resources/features` (use-case layer, not UI)
+- Persistence IT: `adapter-persistence` + Testcontainers
+- API: `bootstrap` `ApiEndToEndTest` + thin controller tests
+- QA UI procedures: [`docs/qa/`](docs/qa/)
 
 ## Reviews
 
