@@ -52,6 +52,11 @@ export const client = {
       method: 'POST',
       body: JSON.stringify({ companyId, name, email })
     }),
+  updateContact: (id: string, companyId: string, name: string, email: string | null) =>
+    api<void>(`/api/contacts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ companyId, name, email })
+    }),
   deals: (stage?: string, ownerId?: string) => {
     const query = new URLSearchParams();
     if (stage) query.set('stage', stage);

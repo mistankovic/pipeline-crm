@@ -11,8 +11,13 @@
   let error = $state('');
 
   async function load() {
-    [contacts, companies] = await Promise.all([client.contacts(), client.companies()]);
-    if (!companyId && companies[0]) companyId = companies[0].id;
+    error = '';
+    try {
+      [contacts, companies] = await Promise.all([client.contacts(), client.companies()]);
+      if (!companyId && companies[0]) companyId = companies[0].id;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to load contacts';
+    }
   }
 
   async function create(event: Event) {
@@ -25,6 +30,20 @@
       await load();
     } catch (err) {
       error = err instanceof Error ? err.message : 'Create failed';
+    }
+  }
+
+  async function edit(contact: Contact) {
+    const nextName = prompt('Name', contact.name);
+    if (!nextName) return;
+    const nextEmail = prompt('Email (blank to clear)', contact.email ?? '');
+    if (nextEmail === null) return;
+    error = '';
+    try {
+      await client.updateContact(contact.id, contact.companyId, nextName, nextEmail || null);
+      await load();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Update failed';
     }
   }
 
@@ -42,12 +61,13 @@
   <button type="submit">Create</button>
 </form>
 <table>
-  <thead><tr><th>Name</th><th>Email</th></tr></thead>
+  <thead><tr><th>Name</th><th>Email</th><th></th></tr></thead>
   <tbody>
     {#each contacts as contact}
       <tr>
         <td>{contact.name}</td>
         <td>{contact.email ?? ''}</td>
+        <td><button class="ghost" type="button" onclick={() => edit(contact)}>Edit</button></td>
       </tr>
     {/each}
   </tbody>

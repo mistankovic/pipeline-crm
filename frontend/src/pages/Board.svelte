@@ -25,7 +25,8 @@
         client.users(),
         client.companies()
       ]);
-      if (!ownerId && users[0]) ownerId = users[0].id;
+      const me = localStorage.getItem('userId');
+      if (!ownerId) ownerId = me && users.some((u) => u.id === me) ? me : users[0]?.id ?? '';
       if (!companyId && companies[0]) companyId = companies[0].id;
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load board';

@@ -8,7 +8,12 @@
   let error = $state('');
 
   async function load() {
-    companies = await client.companies();
+    error = '';
+    try {
+      companies = await client.companies();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to load companies';
+    }
   }
 
   async function create(event: Event) {
@@ -26,8 +31,13 @@
   async function rename(company: Company) {
     const next = prompt('New name', company.name);
     if (!next) return;
-    await client.updateCompany(company.id, next);
-    await load();
+    error = '';
+    try {
+      await client.updateCompany(company.id, next);
+      await load();
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Rename failed';
+    }
   }
 
   onMount(load);
