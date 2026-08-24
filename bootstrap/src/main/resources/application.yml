@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: pipeline-crm
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pipelinecrm
+    username: pipelinecrm
+    password: pipelinecrm
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+pipelinecrm:
+  jwt:
+    secret: "demo-only-change-me-please-use-32-bytes!"
+    ttl-seconds: 3600
+
+server:
+  port: 8080
