@@ -35,7 +35,7 @@ Expected: each step’s **Pass** column holds after a human (or the browser sess
 
 ## P4 — Stage change (server is the authority)
 
-1. Logged in as Sales, open a **Manager**-owned deal and click `CLOSED_WON` (or drag) → error: only owner or manager may change stage; card stays put.
+1. As Sales, create a second deal with owner **Manager**. Open that card and click `CLOSED_WON` (or drag) → error: only owner or manager may change stage; card stays put.
 2. On your own LEAD deal, drag/click to **NEGOTIATION** (skip) → conflict; still LEAD.
 3. Click **QUALIFIED** → card/detail shows QUALIFIED.
 4. Closed-won **without** Call/Meeting → conflict `closed-won requires a call or meeting on the deal`.
